@@ -13,15 +13,15 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
+    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
+        httpSecurity
             .csrf(csrf -> csrf.disable())  // disable CSRF for dev (enable later)
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/api/users/register").permitAll()  // ← public register endpoint
                     .anyRequest().authenticated()  // everything else requires auth
             );
 
-        return http.build();
+        return httpSecurity.build();
     }
 
     @Bean
