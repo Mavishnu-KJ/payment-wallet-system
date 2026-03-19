@@ -9,7 +9,7 @@ import lombok.Data;
 public class RegisterRequestDto {
     @NotBlank
     @Size(min = 3, max = 20)
-    private String username;
+    private String userName;
 
     @NotBlank
     @Size(min = 6)
