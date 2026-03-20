@@ -1,5 +1,6 @@
 package com.example.userservice.controller;
 
+import com.example.userservice.model.dto.LoginRequestDto;
 import com.example.userservice.model.dto.RegisterRequestDto;
 import com.example.userservice.model.dto.UserResponseDto;
 import com.example.userservice.service.UserService;
@@ -8,13 +9,11 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -40,6 +39,36 @@ public class UserController {
         logger.info("register, location is {}", location);
 
         return ResponseEntity.created(location).body(userResponseDto);
+    }
+
+    @GetMapping("/{id}")
+    ResponseEntity<UserResponseDto> getUserById(@PathVariable(name = "id") Long id){
+        logger.info("getUserById, id is {}", id);
+
+        UserResponseDto userResponseDto = userService.getUserById(id);
+        logger.info("getUserById, userResponseDto is {}", userResponseDto);
+
+        return ResponseEntity.ok(userResponseDto);
+    }
+
+    @GetMapping
+    ResponseEntity<List<UserResponseDto>> getAllUsers(){
+        logger.info("getAllUsers");
+
+        List<UserResponseDto> userResponseDtoList = userService.getAllUsers();
+        logger.info("getAllUsers, userResponseDtoList is {}", userResponseDtoList);
+
+        return ResponseEntity.ok(userResponseDtoList);
+    }
+
+    @PostMapping("/login")
+    ResponseEntity<String> login(@Valid @RequestBody LoginRequestDto loginRequestDto){
+        logger.info("login, loginRequestDto is {}", loginRequestDto);
+
+        String token = userService.generateToken(loginRequestDto);
+        logger.info("login, token is {}", token);
+
+        return ResponseEntity.ok(token);
     }
 
 }

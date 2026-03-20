@@ -17,7 +17,7 @@ public class SecurityConfig {
         httpSecurity
             .csrf(csrf -> csrf.disable())  // disable CSRF for dev (enable later)
             .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/api/users/register").permitAll()  // ← public register endpoint
+                    .requestMatchers("/api/users/register", "/api/users", "/api/users/{id}", "/api/users/login").permitAll()  // ← public register endpoint
                     .anyRequest().authenticated()  // everything else requires auth
             );
 
