@@ -13,5 +13,7 @@ public interface UserService {
     UserResponseDto getUserById(Long id);
     List<UserResponseDto> getAllUsers();
 
+    UserResponseDto getCurrentUser();
+
 
 }

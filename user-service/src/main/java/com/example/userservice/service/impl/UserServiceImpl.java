@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Objects;
@@ -115,6 +116,24 @@ public class UserServiceImpl implements UserService {
         logger.info("generateToken, token is {}", token);
 
         return token;
+    }
+
+    @Override
+    public UserResponseDto getCurrentUser(){
+        logger.info("getCurrentUser");
+
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        logger.info("getCurrentUser, username is {}", username);
+
+        //Check if user not found
+        User user = userRepository.findByUserName(username)
+                .orElseThrow(() -> new ResourceNotFoundException(username));
+
+        //Map entity to response dto
+        UserResponseDto userResponseDto = modelMapper.map(user, UserResponseDto.class);
+        logger.info("getCurrentUser, userResponseDto is {}", userResponseDto);
+
+        return userResponseDto;
     }
 
 

@@ -3,6 +3,7 @@ package com.example.userservice.controller;
 import com.example.userservice.model.dto.LoginRequestDto;
 import com.example.userservice.model.dto.RegisterRequestDto;
 import com.example.userservice.model.dto.UserResponseDto;
+import com.example.userservice.model.entity.User;
 import com.example.userservice.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -69,6 +70,16 @@ public class UserController {
         logger.info("login, token is {}", token);
 
         return ResponseEntity.ok(token);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDto> getCurrentUser() {
+        logger.info("getCurrentUser");
+
+        UserResponseDto userResponseDto = userService.getCurrentUser();
+        logger.info("getCurrentUser, userResponseDto is {}", userResponseDto);
+
+        return ResponseEntity.ok(userResponseDto);
     }
 
 }
