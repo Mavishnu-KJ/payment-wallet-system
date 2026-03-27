@@ -28,12 +28,15 @@ public class Wallet {
     @Enumerated(EnumType.STRING) // Always use STRING for enums in production
     private WalletStatus walletStatus = WalletStatus.ACTIVE;
 
+    @Column(nullable = false)
     @CreationTimestamp
     private LocalDateTime createdAt;
 
+    @Column(nullable = false)
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    @Column(nullable = false)
     @Version
     private Long version; // For optimistic locking
 

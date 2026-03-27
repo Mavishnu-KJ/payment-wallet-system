@@ -1,0 +1,11 @@
+server:
+  port: 8081      # ← This forces the service to run ONLY on port mentioned
+
+# Optional but useful settings
+Spring:
+  Application:
+    name: user-service
+
+# If you have other configs
+user-service:
+  url: http://localhost:8081

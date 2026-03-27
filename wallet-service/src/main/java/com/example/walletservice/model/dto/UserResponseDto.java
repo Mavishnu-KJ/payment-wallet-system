@@ -1,7 +1,5 @@
-package com.example.userservice.model.dto;
+package com.example.walletservice.model.dto;
 
-import com.example.userservice.model.enums.UserRole;
-import com.example.userservice.model.enums.UserStatus;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -14,8 +12,8 @@ public class UserResponseDto {
     private String password;
     private String email;
     private String fullName;
-    private UserRole userRole;
-    private UserStatus userStatus;
+    private String userRole;
+    private String userStatus;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Long version;

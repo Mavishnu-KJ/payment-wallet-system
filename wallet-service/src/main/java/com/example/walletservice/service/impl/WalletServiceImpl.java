@@ -1,13 +1,16 @@
 package com.example.walletservice.service.impl;
 
+import com.example.walletservice.client.UserServiceClient;
 import com.example.walletservice.exceptions.ResourceNotFoundException;
 import com.example.walletservice.model.dto.AddMoneyRequestDto;
+import com.example.walletservice.model.dto.UserResponseDto;
 import com.example.walletservice.model.dto.WalletResponseDto;
 import com.example.walletservice.model.entity.Wallet;
 import com.example.walletservice.repository.WalletRepository;
 import com.example.walletservice.service.WalletService;
 import jakarta.transaction.Transactional;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,10 +18,12 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Data
+@RequiredArgsConstructor
 public class WalletServiceImpl implements WalletService {
 
     private final WalletRepository walletRepository;
     private final ModelMapper modelMapper;
+    private final UserServiceClient userServiceClient;
 
     private static final Logger logger = LoggerFactory.getLogger(WalletServiceImpl.class);
 
@@ -26,6 +31,13 @@ public class WalletServiceImpl implements WalletService {
     @Transactional
     public WalletResponseDto addMoney(AddMoneyRequestDto addMoneyRequestDto){
         logger.info("addMoney, addMoneyRequestDto is {}", addMoneyRequestDto);
+
+        //Check for whether the userId exists or not in user-service
+        UserResponseDto userResponseDto = userServiceClient.getUserById(addMoneyRequestDto.getUserId());
+
+        if(userResponseDto == null || !userResponseDto.getUserStatus().equalsIgnoreCase("ACTIVE")){
+            throw new ResourceNotFoundException("UserId not found or not active : "+addMoneyRequestDto.getUserId());
+        }
 
         //Get wallet for the userId
         Wallet wallet = walletRepository.findByUserId(addMoneyRequestDto.getUserId())

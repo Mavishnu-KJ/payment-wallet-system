@@ -40,10 +40,10 @@ public class UserServiceImpl implements UserService {
 
         //Check duplicates
         if(userRepository.existsByUserName(registerRequestDto.getUserName())){
-            throw new RuntimeException("userName already exists");
+            throw new ResourceNotFoundException("userName already exists : "+registerRequestDto.getUserName());
         }
         if(userRepository.existsByEmail(registerRequestDto.getEmail())){
-            throw new RuntimeException("email already exists");
+            throw new ResourceNotFoundException("email already exists : "+registerRequestDto.getEmail());
         }
 
         //Map request Dto to Entity
@@ -104,7 +104,7 @@ public class UserServiceImpl implements UserService {
 
         //Check if user not found
         User user = userRepository.findByUserName(loginRequestDto.getUserName())
-                        .orElseThrow(() -> new ResourceNotFoundException(loginRequestDto.getUserName()));
+                        .orElseThrow(() -> new ResourceNotFoundException("Resource not found for "+loginRequestDto.getUserName()));
 
         //Check password match
         if(!passwordEncoder.matches(loginRequestDto.getPassword(), user.getPassword())){
@@ -127,7 +127,7 @@ public class UserServiceImpl implements UserService {
 
         //Check if user not found
         User user = userRepository.findByUserName(username)
-                .orElseThrow(() -> new ResourceNotFoundException(username));
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found for "+username));
 
         //Map entity to response dto
         UserResponseDto userResponseDto = modelMapper.map(user, UserResponseDto.class);

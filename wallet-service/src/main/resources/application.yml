@@ -1,0 +1,11 @@
+server:
+  port: 8082      # ← This forces the service to run ONLY on port mentioned
+
+# Optional but useful settings
+Spring:
+  Application:
+    name: wallet-service
+
+# If you have other configs
+wallet-service:
+  url: http://localhost:8082

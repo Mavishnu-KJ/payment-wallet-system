@@ -10,8 +10,8 @@ public class ResourceNotFoundException extends RuntimeException {
         super("Resource not found");
     }
 
-    public ResourceNotFoundException(String userName){
-        super("Resource not found : "+userName);
+    public ResourceNotFoundException(String message){
+        super(message);
     }
 
 }

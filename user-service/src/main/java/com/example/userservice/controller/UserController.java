@@ -34,7 +34,7 @@ public class UserController {
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
-                .replacePath("/api/users/{id}")
+                .replacePath("/api/users/{userId}")
                 .buildAndExpand(userResponseDto.getId())
                 .toUri();
         logger.info("register, location is {}", location);
@@ -42,8 +42,8 @@ public class UserController {
         return ResponseEntity.created(location).body(userResponseDto);
     }
 
-    @GetMapping("/{id}")
-    ResponseEntity<UserResponseDto> getUserById(@PathVariable(name = "id") Long id){
+    @GetMapping("/{userId}")
+    ResponseEntity<UserResponseDto> getUserById(@PathVariable(name = "userId") Long id){
         logger.info("getUserById, id is {}", id);
 
         UserResponseDto userResponseDto = userService.getUserById(id);
