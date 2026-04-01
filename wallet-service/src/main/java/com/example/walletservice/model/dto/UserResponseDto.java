@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 public class UserResponseDto {
 
     private Long id;
-    private String userName;
+    private String username;
     private String password;
     private String email;
     private String fullName;

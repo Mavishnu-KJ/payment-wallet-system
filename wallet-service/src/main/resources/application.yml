@@ -9,3 +9,7 @@ Spring:
 # If you have other configs
 wallet-service:
   url: http://localhost:8082
+
+# secret key for jwt token
+jwt:
+  secret: "PaymentWalletSystem_StrongSecretKey_AtLeast64Chars_LongAndRandom"

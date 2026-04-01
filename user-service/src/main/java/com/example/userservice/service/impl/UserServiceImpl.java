@@ -39,8 +39,8 @@ public class UserServiceImpl implements UserService {
         logger.info("register, registerRequestDto is {}", registerRequestDto);
 
         //Check duplicates
-        if(userRepository.existsByUserName(registerRequestDto.getUserName())){
-            throw new ResourceNotFoundException("userName already exists : "+registerRequestDto.getUserName());
+        if(userRepository.existsByUserName(registerRequestDto.getUsername())){
+            throw new ResourceNotFoundException("username already exists : "+registerRequestDto.getUsername());
         }
         if(userRepository.existsByEmail(registerRequestDto.getEmail())){
             throw new ResourceNotFoundException("email already exists : "+registerRequestDto.getEmail());
@@ -103,8 +103,8 @@ public class UserServiceImpl implements UserService {
         logger.info("generateToken, loginRequestDto is {}", loginRequestDto);
 
         //Check if user not found
-        User user = userRepository.findByUserName(loginRequestDto.getUserName())
-                        .orElseThrow(() -> new ResourceNotFoundException("Resource not found for "+loginRequestDto.getUserName()));
+        User user = userRepository.findByUserName(loginRequestDto.getUsername())
+                        .orElseThrow(() -> new ResourceNotFoundException("Resource not found for "+loginRequestDto.getUsername()));
 
         //Check password match
         if(!passwordEncoder.matches(loginRequestDto.getPassword(), user.getPassword())){
@@ -112,7 +112,7 @@ public class UserServiceImpl implements UserService {
         }
 
         //Generate token
-        String token = jwtUtil.generateToken(user.getUserName());
+        String token = jwtUtil.generateToken(user.getUsername());
         logger.info("generateToken, token is {}", token);
 
         return token;
