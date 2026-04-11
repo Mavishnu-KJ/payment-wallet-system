@@ -35,7 +35,7 @@ public class UserController {
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
                 .replacePath("/api/users/{userId}")
-                .buildAndExpand(userResponseDto.getId())
+                .buildAndExpand(userResponseDto.getUserId())
                 .toUri();
         logger.info("register, location is {}", location);
 
