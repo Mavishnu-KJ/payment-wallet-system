@@ -12,4 +12,23 @@ wallet-service:
 
 # secret key for jwt token
 jwt:
-  secret: "PaymentWalletSystem_StrongSecretKey_AtLeast64Chars_LongAndRandom"
+  secret: "PaymentWalletSystemStrongSecretKeyAtLeast64CharsLongAndRandomWithoutUnderScore"
+
+#Disable default security - important
+spring:
+  security:
+    user:
+      name: ""      # Disable default user
+      password: ""
+
+#Feign Configuration
+feign:
+  client:
+    config:
+      user-service:
+        connectTimeout: 5000
+        readTimeout: 5000
+
+#User Service URL (used when running locally without Eureka)
+user-service:
+  url: http://localhost:8081

@@ -1,5 +1,6 @@
 package com.example.walletservice.model.dto;
 
+import com.example.walletservice.model.enums.UserStatus;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -7,13 +8,13 @@ import java.time.LocalDateTime;
 @Data
 public class UserResponseDto {
 
-    private Long id;
+    private Long userId;
     private String username;
     private String password;
     private String email;
     private String fullName;
     private String userRole;
-    private String userStatus;
+    private UserStatus userStatus;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Long version;

@@ -2,6 +2,7 @@ package com.example.walletservice.controller;
 
 import com.example.walletservice.model.dto.AddMoneyRequestDto;
 import com.example.walletservice.model.dto.WalletResponseDto;
+import com.example.walletservice.security.CurrentUser;
 import com.example.walletservice.service.WalletService;
 import jakarta.validation.Valid;
 import lombok.Data;
@@ -16,12 +17,19 @@ import org.springframework.web.bind.annotation.*;
 public class WalletController {
 
     private final WalletService walletService;
+    private final CurrentUser currentUser;
 
     private static final Logger logger = LoggerFactory.getLogger(WalletController.class);
 
-    @PostMapping("/addMoney")
+    ///me endpoints are secured
+
+    @PostMapping("/me/addMoney")
     ResponseEntity<WalletResponseDto> addMoney(@Valid @RequestBody AddMoneyRequestDto addMoneyRequestDto){
         logger.info("addMoney, addMoneyRequestDto is {}", addMoneyRequestDto);
+
+        //This CurrentUser class we are using for controller endpoint logger only
+        String username = currentUser.getCurrentUsername();
+        logger.info("addMoney, called by username : {}", username);
 
         WalletResponseDto walletResponseDto = walletService.addMoney(addMoneyRequestDto);
         logger.info("addMoney, walletResponseDto is {}", walletResponseDto);
@@ -29,22 +37,30 @@ public class WalletController {
         return ResponseEntity.ok(walletResponseDto);
     }
 
-    @GetMapping("/{userId}")
-    ResponseEntity<WalletResponseDto> getWalletByUserId(@PathVariable(name = "userId") Long userId){
-        logger.info("getWalletByUserId, userId is {}", userId);
+    @GetMapping("/me")
+    ResponseEntity<WalletResponseDto> getMyWallet(){
+        logger.info("getMyWallet");
 
-        WalletResponseDto walletResponseDto = walletService.getWalletByUserId(userId);
+        //This CurrentUser class we are using for controller endpoint logger only
+        String username = currentUser.getCurrentUsername();
+        logger.info("getMyWallet, called by username : {}", username);
+
+        WalletResponseDto walletResponseDto = walletService.getMyWallet();
         logger.info("getWalletByUserId, walletResponseDto is {}", walletResponseDto);
 
         return ResponseEntity.ok(walletResponseDto);
     }
 
-    @GetMapping("/{userId}/balance")
-    ResponseEntity<Double> getBalanceByUserId(@PathVariable(name = "userId") Long userId){
-        logger.info("getBalanceByUserId, userId is {}", userId);
+    @GetMapping("/me/balance")
+    ResponseEntity<Double> getMyWalletBalance(){
+        logger.info("getMyWalletBalance");
 
-        Double balance = walletService.getBalanceByUserId(userId);
-        logger.info("getBalanceByUserId, balance is {}", balance);
+        //This CurrentUser class we are using for controller endpoint logger only
+        String username = currentUser.getCurrentUsername();
+        logger.info("getMyWalletBalance, called by username : {}", username);
+
+        Double balance = walletService.getMyWalletBalance();
+        logger.info("getMyWalletBalance, balance is {}", balance);
 
         return ResponseEntity.ok(balance);
     }

@@ -6,6 +6,8 @@ import com.example.walletservice.model.dto.AddMoneyRequestDto;
 import com.example.walletservice.model.dto.UserResponseDto;
 import com.example.walletservice.model.dto.WalletResponseDto;
 import com.example.walletservice.model.entity.Wallet;
+import com.example.walletservice.model.enums.UserStatus;
+import com.example.walletservice.model.enums.WalletStatus;
 import com.example.walletservice.repository.WalletRepository;
 import com.example.walletservice.service.WalletService;
 import jakarta.transaction.Transactional;
@@ -32,26 +34,27 @@ public class WalletServiceImpl implements WalletService {
     public WalletResponseDto addMoney(AddMoneyRequestDto addMoneyRequestDto){
         logger.info("addMoney, addMoneyRequestDto is {}", addMoneyRequestDto);
 
+        //Fetch current user from User Service via Feign
+        UserResponseDto userResponseDto = userServiceClient.getCurrentUser();
+
         //Check for whether the userId exists or not in user-service
-        UserResponseDto userResponseDto = userServiceClient.getUserById(addMoneyRequestDto.getUserId());
-
-        if(userResponseDto == null || !userResponseDto.getUserStatus().equalsIgnoreCase("ACTIVE")){
-            throw new ResourceNotFoundException("UserId not found or not active : "+addMoneyRequestDto.getUserId());
+        if(userResponseDto == null || userResponseDto.getUserStatus() != UserStatus.ACTIVE){
+            throw new ResourceNotFoundException("User not found or not active");
         }
 
-        //Get wallet for the userId
-        Wallet wallet = walletRepository.findByUserId(addMoneyRequestDto.getUserId())
-                            .orElse(new Wallet());
+        long userId = userResponseDto.getUserId();
+        logger.info("addMoney, userId is {}", userId);
 
-        //Set wallet userId if it is newly created wallet
-        if(wallet.getUserId() == null){
-            wallet.setUserId(addMoneyRequestDto.getUserId());
-            wallet.setBalance(0.00);
-            logger.info("addMoney, newly created wallet with initialized details is {}", wallet);
-        }
+        //Get or create wallet for the userId
+        Wallet wallet = walletRepository.findByUserId(userId)
+                            .orElse(createNewWallet(userId));
 
         //Update wallet balance
-        Double totalWalletBalance = wallet.getBalance() + addMoneyRequestDto.getAmount();
+        double totalWalletBalance = wallet.getBalance() + addMoneyRequestDto.getAmount();
+        if (totalWalletBalance < 0) {
+            throw new IllegalArgumentException("Balance cannot be negative");
+        }
+
         wallet.setBalance(totalWalletBalance);
         logger.info("addMoney, newly created wallet with updated details is {}", wallet);
 
@@ -67,31 +70,64 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
-    public WalletResponseDto getWalletByUserId(Long userId){
-        logger.info("getWalletByUserId, userId is {}", userId);
+    public WalletResponseDto getMyWallet(){
+        logger.info("getMyWallet");
+
+        //Fetch current user from User Service via Feign
+        UserResponseDto userResponseDto = userServiceClient.getCurrentUser();
+
+        //Check for whether the userId exists or not in user-service
+        if(userResponseDto == null || userResponseDto.getUserStatus() != UserStatus.ACTIVE){
+            throw new ResourceNotFoundException("User not found or not active");
+        }
+
+        long userId = userResponseDto.getUserId();
+        logger.info("getMyWallet, userId is {}", userId);
 
         //Find wallet for the userId
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for the UserId : "+userId));
-        logger.info("getWalletByUserId, wallet is {}", userId);
+        logger.info("getMyWallet, wallet is {}", wallet);
 
         //Map entity to response dto
         WalletResponseDto walletResponseDto = modelMapper.map(wallet, WalletResponseDto.class);
-        logger.info("getWalletByUserId, walletResponseDto is {}", walletResponseDto);
+        logger.info("getMyWallet, walletResponseDto is {}", walletResponseDto);
 
         return walletResponseDto;
     }
 
     @Override
-    public Double getBalanceByUserId(Long userId){
-        logger.info("getBalanceByUserId, userId is {}", userId);
+    public Double getMyWalletBalance(){
+        logger.info("getMyWalletBalance");
+
+        //Fetch current user from User Service via Feign
+        UserResponseDto userResponseDto = userServiceClient.getCurrentUser();
+
+        //Check for whether the userId exists or not in user-service
+        if(userResponseDto == null || userResponseDto.getUserStatus() != UserStatus.ACTIVE){
+            throw new ResourceNotFoundException("User not found or not active");
+        }
+
+        long userId = userResponseDto.getUserId();
+        logger.info("getMyWalletBalance, userId is {}", userId);
 
         //Find wallet for the userId
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for the userId : "+userId));
 
-        logger.info("getBalanceByUserId, wallet is {}", wallet);
+        logger.info("getMyWalletBalance, wallet is {}", wallet);
 
         return wallet.getBalance();
+    }
+
+    //Helper method
+    private Wallet createNewWallet(Long userId) {
+        Wallet wallet = new Wallet();
+        wallet.setUserId(userId);
+        wallet.setBalance(0.0);
+        wallet.setCurrency("INR");
+        wallet.setWalletStatus(WalletStatus.ACTIVE);
+        logger.info("Created new wallet for userId: {}", userId);
+        return wallet;
     }
 }
