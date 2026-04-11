@@ -39,7 +39,7 @@ public class UserServiceImpl implements UserService {
         logger.info("register, registerRequestDto is {}", registerRequestDto);
 
         //Check duplicates
-        if(userRepository.existsByUserName(registerRequestDto.getUsername())){
+        if(userRepository.existsByUsername(registerRequestDto.getUsername())){
             throw new ResourceNotFoundException("username already exists : "+registerRequestDto.getUsername());
         }
         if(userRepository.existsByEmail(registerRequestDto.getEmail())){
@@ -103,7 +103,7 @@ public class UserServiceImpl implements UserService {
         logger.info("generateToken, loginRequestDto is {}", loginRequestDto);
 
         //Check if user not found
-        User user = userRepository.findByUserName(loginRequestDto.getUsername())
+        User user = userRepository.findByUsername(loginRequestDto.getUsername())
                         .orElseThrow(() -> new ResourceNotFoundException("Resource not found for "+loginRequestDto.getUsername()));
 
         //Check password match
@@ -126,7 +126,7 @@ public class UserServiceImpl implements UserService {
         logger.info("getCurrentUser, username is {}", username);
 
         //Check if user not found
-        User user = userRepository.findByUserName(username)
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Resource not found for "+username));
 
         //Map entity to response dto

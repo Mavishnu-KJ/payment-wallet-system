@@ -12,4 +12,4 @@ user-service:
 
 # secret key for jwt token
 jwt:
-  secret: "PaymentWalletSystem_StrongSecretKey_AtLeast64Chars_LongAndRandom"
+  secret: "PaymentWalletSystemStrongSecretKeyAtLeast64CharsLongAndRandomWithoutUnderScore"
