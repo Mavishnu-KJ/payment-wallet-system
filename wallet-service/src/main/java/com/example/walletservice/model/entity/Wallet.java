@@ -5,8 +5,6 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 
@@ -19,27 +17,32 @@ public class Wallet {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private Long userId;                        // Link to User Service
+    private Long userId;                        // Foreign key to User Service
 
     @Column(nullable = false)
-    private Double balance;
+    private Double balance = 0.0;               // Default value
 
-    @Column
+    @Column(nullable = false, length = 3)
     private String currency = "INR";
 
-    @Enumerated(EnumType.STRING) // Always use STRING for enums in production
-    private WalletStatus walletStatus = WalletStatus.ACTIVE;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)// Always use STRING for enums in production
+    private WalletStatus status = WalletStatus.ACTIVE;
 
-    @Column(nullable = false)
     @CreationTimestamp
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(nullable = false)
     @UpdateTimestamp
+    @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    @Column(nullable = false)
     @Version
     private Long version; // For optimistic locking
+
+    //Optional: Helper method
+    public boolean isActive() {
+        return this.status == WalletStatus.ACTIVE;
+    }
 
 }
