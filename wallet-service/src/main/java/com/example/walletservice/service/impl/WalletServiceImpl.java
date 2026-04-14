@@ -126,7 +126,7 @@ public class WalletServiceImpl implements WalletService {
         wallet.setUserId(userId);
         wallet.setBalance(0.0);
         wallet.setCurrency("INR");
-        wallet.setWalletStatus(WalletStatus.ACTIVE);
+        wallet.setStatus(WalletStatus.ACTIVE);
         logger.info("Created new wallet for userId: {}", userId);
         return wallet;
     }
