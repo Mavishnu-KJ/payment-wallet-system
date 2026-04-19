@@ -6,6 +6,7 @@ import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -21,7 +22,7 @@ public class Wallet {
     private Long userId;                        // Foreign key to User Service
 
     @Column(nullable = false)
-    private Double balance = 0.0;               // Default value
+    private BigDecimal balance = BigDecimal.ZERO;              // Default value
 
     @Column(nullable = false, length = 3)
     private String currency = "INR";

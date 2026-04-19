@@ -1,6 +1,7 @@
 package com.example.walletservice.service.impl;
 
 import com.example.walletservice.client.UserServiceClient;
+import com.example.walletservice.exceptions.InsufficientBalanceException;
 import com.example.walletservice.exceptions.ResourceNotFoundException;
 import com.example.walletservice.model.dto.AddMoneyRequestDto;
 import com.example.walletservice.model.dto.UserResponseDto;
@@ -17,6 +18,8 @@ import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
 
 @Service
 @Data
@@ -50,8 +53,8 @@ public class WalletServiceImpl implements WalletService {
                             .orElse(createNewWallet(userId));
 
         //Update wallet balance
-        double totalWalletBalance = wallet.getBalance() + addMoneyRequestDto.getAmount();
-        if (totalWalletBalance < 0) {
+        BigDecimal totalWalletBalance = wallet.getBalance().add(addMoneyRequestDto.getAmount());
+        if (totalWalletBalance.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Balance cannot be negative");
         }
 
@@ -97,7 +100,7 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
-    public Double getMyWalletBalance(){
+    public BigDecimal getMyWalletBalance(){
         logger.info("getMyWalletBalance");
 
         //Fetch current user from User Service via Feign
@@ -124,10 +127,87 @@ public class WalletServiceImpl implements WalletService {
     private Wallet createNewWallet(Long userId) {
         Wallet wallet = new Wallet();
         wallet.setUserId(userId);
-        wallet.setBalance(0.0);
+        wallet.setBalance(BigDecimal.ZERO);
         wallet.setCurrency("INR");
         wallet.setStatus(WalletStatus.ACTIVE);
         logger.info("Created new wallet for userId: {}", userId);
         return wallet;
     }
+
+    @Override
+    public WalletResponseDto getWalletById(Long walletId){
+        logger.info("Internal getWalletById, walletId is {}", walletId);
+
+        Wallet wallet = walletRepository.findById(walletId)
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for the walletId : "+walletId));
+        logger.info("getWalletById, wallet is {}", wallet);
+
+        //Map entity to response dto
+        WalletResponseDto walletResponseDto = modelMapper.map(wallet, WalletResponseDto.class);
+        logger.info("getWalletById, walletResponseDto is {}", walletResponseDto);
+
+        return walletResponseDto;
+    }
+
+    @Override
+    @Transactional
+    public WalletResponseDto debit(Long walletId, BigDecimal amount) {
+        logger.info("Internal debit, walletId: {}, amount: {}", walletId, amount);
+
+        Wallet wallet = walletRepository.findById(walletId)
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for the walletId : " + walletId));
+        logger.info("Internal debit, wallet is {}", wallet);
+
+        if (wallet.getStatus() != WalletStatus.ACTIVE) {
+            throw new IllegalStateException("Wallet is not active");
+        }
+
+        if (wallet.getBalance().compareTo(amount) < 0) {
+            throw new InsufficientBalanceException("Insufficient balance for debit operation");
+        }
+
+        //Debit amount
+        wallet.setBalance(wallet.getBalance().subtract(amount));
+
+        Wallet savedWallet = walletRepository.save(wallet);
+        logger.info("Internal debit, savedWallet is {}", savedWallet);
+        logger.info("Internal debit, Debit successful. New balance: {}", savedWallet.getBalance());
+
+        WalletResponseDto walletResponseDto = modelMapper.map(savedWallet, WalletResponseDto.class);
+        logger.info("Internal debit, walletResponseDto is {}", walletResponseDto);
+
+        return walletResponseDto;
+    }
+
+    @Override
+    @Transactional
+    public WalletResponseDto credit(Long walletId, BigDecimal amount) {
+        logger.info("Internal credit, walletId: {}, amount: {}", walletId, amount);
+
+        Wallet wallet = walletRepository.findById(walletId)
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for the walletId : " + walletId));
+        logger.info("Internal credit, wallet is {}", wallet);
+
+        if (wallet.getStatus() != WalletStatus.ACTIVE) {
+            throw new IllegalStateException("Wallet is not active");
+        }
+
+        //Credit
+        wallet.setBalance(wallet.getBalance().add(amount));
+
+        Wallet savedWallet = walletRepository.save(wallet);
+        logger.info("Internal credit, savedWallet is {}", savedWallet);
+        logger.info("Internal credit, Credit successful. New balance: {}", savedWallet.getBalance());
+
+        WalletResponseDto walletResponseDto = modelMapper.map(savedWallet, WalletResponseDto.class);
+        logger.info("Internal credit, walletResponseDto is {}", walletResponseDto);
+
+        return walletResponseDto;
+    }
+
+
+
+
+
+
 }

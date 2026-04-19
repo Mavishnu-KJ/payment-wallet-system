@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+
 @RestController
 @RequestMapping("/api/wallets")
 @Data
@@ -52,16 +54,49 @@ public class WalletController {
     }
 
     @GetMapping("/me/balance")
-    ResponseEntity<Double> getMyWalletBalance(){
+    ResponseEntity<BigDecimal> getMyWalletBalance(){
         logger.info("getMyWalletBalance");
 
         //This CurrentUser class we are using for controller endpoint logger only
         String username = currentUser.getCurrentUsername();
         logger.info("getMyWalletBalance, called by username : {}", username);
 
-        Double balance = walletService.getMyWalletBalance();
+        BigDecimal balance = walletService.getMyWalletBalance();
         logger.info("getMyWalletBalance, balance is {}", balance);
 
         return ResponseEntity.ok(balance);
     }
+
+    // === Internal endpoints for other services (like Transaction Service) ===
+    @GetMapping("/internal/{walletId}")
+    ResponseEntity<WalletResponseDto> getWalletById(@PathVariable Long walletId) {
+        logger.info("Internal call: getWalletById for walletId: {}", walletId);
+
+        WalletResponseDto walletResponseDto = walletService.getWalletById(walletId);
+        logger.info("Internal call: getWalletById, walletResponseDto is {}", walletResponseDto);
+
+        return ResponseEntity.ok(walletResponseDto);
+    }
+
+    @PostMapping("/internal/{walletId}/debit")
+    ResponseEntity<WalletResponseDto> debit(@PathVariable Long walletId, @RequestBody BigDecimal amount) {
+        logger.info("Internal call: debit, walletId: {}, amount: {}", walletId, amount);
+
+        WalletResponseDto walletResponseDto = walletService.debit(walletId, amount);
+        logger.info("Internal call: debit, walletResponseDto is {}", walletResponseDto);
+
+        return ResponseEntity.ok(walletResponseDto);
+    }
+
+    @PostMapping("/internal/{walletId}/credit")
+    ResponseEntity<WalletResponseDto> credit(@PathVariable Long walletId, @RequestBody BigDecimal amount) {
+        logger.info("Internal call: credit, walletId: {}, amount: {}", walletId, amount);
+
+        WalletResponseDto walletResponseDto = walletService.credit(walletId, amount);
+        logger.info("Internal call: credit, walletResponseDto is {}", walletResponseDto);
+
+        return ResponseEntity.ok(walletResponseDto);
+    }
+
+
 }

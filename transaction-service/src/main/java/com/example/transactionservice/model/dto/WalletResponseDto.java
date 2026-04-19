@@ -1,4 +1,4 @@
-package com.example.walletservice.model.dto;
+package com.example.transactionservice.model.dto;
 
 import lombok.Data;
 
