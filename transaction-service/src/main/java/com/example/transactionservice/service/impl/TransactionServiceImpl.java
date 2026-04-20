@@ -1,16 +1,20 @@
 package com.example.transactionservice.service.impl;
 
+import com.example.transactionservice.client.UserServiceClient;
 import com.example.transactionservice.client.WalletServiceClient;
 import com.example.transactionservice.exceptions.InsufficientBalanceException;
 import com.example.transactionservice.exceptions.ResourceNotFoundException;
 import com.example.transactionservice.model.dto.TransactionResponseDto;
 import com.example.transactionservice.model.dto.TransferRequestDto;
+import com.example.transactionservice.model.dto.UserResponseDto;
 import com.example.transactionservice.model.dto.WalletResponseDto;
 import com.example.transactionservice.model.entity.Transaction;
 import com.example.transactionservice.model.enums.TransactionStatus;
 import com.example.transactionservice.model.enums.TransactionType;
+import com.example.transactionservice.model.enums.UserStatus;
 import com.example.transactionservice.model.enums.WalletStatus;
 import com.example.transactionservice.repository.TransactionRepository;
+import com.example.transactionservice.security.CurrentUser;
 import com.example.transactionservice.service.TransactionService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +35,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final TransactionRepository transactionRepository;
     private final ModelMapper modelMapper;
     private final WalletServiceClient walletServiceClient;
+    private final UserServiceClient userServiceClient;
 
     private final Logger logger = LoggerFactory.getLogger(TransactionServiceImpl.class);
 
@@ -40,9 +45,23 @@ public class TransactionServiceImpl implements TransactionService {
         logger.info("P2P Transfer started: fromWalletId {} -> toWalletId {} | Amount: {}",
                 transferRequestDto.getFromWalletId(), transferRequestDto.getToWalletId(), transferRequestDto.getAmount());
 
-        // Step 1: Validate both wallets exist and are active
+        // Step 1: Get current logged-in user from User Service
+        UserResponseDto currentUserResponseDto = userServiceClient.getCurrentUser();
+        logger.info("P2P Transfer, currentUserResponseDto is {}", currentUserResponseDto);
+
+        if(currentUserResponseDto == null || currentUserResponseDto.getUserStatus() != UserStatus.ACTIVE){
+            throw new ResourceNotFoundException("User not found or inactive");
+        }
+
+        Long loggedInUserId = currentUserResponseDto.getUserId();
+        logger.info("P2P Transfer, transfer initiated by loggedInUserId is {}", loggedInUserId);
+
+        // Step 2: Validate both wallets exist and are active
         WalletResponseDto fromWallet = walletServiceClient.getWalletById(transferRequestDto.getFromWalletId());
         WalletResponseDto toWallet = walletServiceClient.getWalletById(transferRequestDto.getToWalletId());
+
+        logger.info("P2P Transfer, fromWallet is {}", fromWallet);
+        logger.info("P2P Transfer, toWallet is {}", toWallet);
 
         if(fromWallet == null){
             throw new ResourceNotFoundException("Wallet not found for the walletId : "+transferRequestDto.getFromWalletId());
@@ -56,7 +75,12 @@ public class TransactionServiceImpl implements TransactionService {
             throw new IllegalStateException("One or both wallets are not active");
         }
 
-        // Step 2: Check sufficient balance
+        // Step 3: Ownership Validation (Security Check)
+        if (!fromWallet.getUserId().equals(loggedInUserId)) {
+            throw new IllegalArgumentException("You can only transfer money from your own wallet");
+        }
+
+        // Step 4: Check sufficient balance
         if (fromWallet.getBalance().compareTo(transferRequestDto.getAmount()) < 0) {
             throw new InsufficientBalanceException("Insufficient balance in source wallet");
         }

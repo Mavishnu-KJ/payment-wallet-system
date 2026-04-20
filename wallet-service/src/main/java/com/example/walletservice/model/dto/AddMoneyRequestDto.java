@@ -10,9 +10,6 @@ import java.math.BigDecimal;
 public class AddMoneyRequestDto {
 
     @NotNull
-    private Long userId;
-
-    @NotNull
     @Min(1)
     private BigDecimal amount;
 }
