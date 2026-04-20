@@ -21,7 +21,10 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        // Protect /me endpoints
                         .requestMatchers("/api/wallets/me/**").authenticated()
+                        // Allow internal endpoints used by other services
+                        .requestMatchers("/api/wallets/internal/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
