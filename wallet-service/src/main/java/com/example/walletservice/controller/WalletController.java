@@ -5,7 +5,7 @@ import com.example.walletservice.model.dto.WalletResponseDto;
 import com.example.walletservice.security.CurrentUser;
 import com.example.walletservice.service.WalletService;
 import jakarta.validation.Valid;
-import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +15,7 @@ import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/wallets")
-@Data
+@RequiredArgsConstructor
 public class WalletController {
 
     private final WalletService walletService;

@@ -52,6 +52,7 @@ public class Transaction {
     @Column(nullable = false, updatable = false)
     private LocalDateTime transactionDate;
 
+    @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
