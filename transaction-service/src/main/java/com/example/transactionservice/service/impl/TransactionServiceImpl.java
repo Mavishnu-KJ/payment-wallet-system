@@ -9,6 +9,7 @@ import com.example.transactionservice.model.dto.WalletResponseDto;
 import com.example.transactionservice.model.entity.Transaction;
 import com.example.transactionservice.model.enums.TransactionStatus;
 import com.example.transactionservice.model.enums.TransactionType;
+import com.example.transactionservice.model.enums.WalletStatus;
 import com.example.transactionservice.repository.TransactionRepository;
 import com.example.transactionservice.service.TransactionService;
 import jakarta.transaction.Transactional;
@@ -49,6 +50,10 @@ public class TransactionServiceImpl implements TransactionService {
 
         if(toWallet == null){
             throw new ResourceNotFoundException("Wallet not found for the walletId : "+transferRequestDto.getToWalletId());
+        }
+
+        if (fromWallet.getStatus() != WalletStatus.ACTIVE || toWallet.getStatus() != WalletStatus.ACTIVE) {
+            throw new IllegalStateException("One or both wallets are not active");
         }
 
         // Step 2: Check sufficient balance
