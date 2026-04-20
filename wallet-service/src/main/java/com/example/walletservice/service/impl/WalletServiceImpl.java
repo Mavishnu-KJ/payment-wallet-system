@@ -205,8 +205,19 @@ public class WalletServiceImpl implements WalletService {
         return walletResponseDto;
     }
 
+    @Override
+    public WalletResponseDto getWalletByUserId(Long userId){
+        logger.info("Internal getWalletByUserId, userId: {}", userId);
 
+        Wallet wallet = walletRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for the userId : "+userId));
+        logger.info("Internal getWalletByUserId, wallet is {}", wallet);
 
+        WalletResponseDto walletResponseDto = modelMapper.map(wallet, WalletResponseDto.class);
+        logger.info("Internal getWalletByUserId, walletResponseDto is {}", walletResponseDto);
+
+        return walletResponseDto;
+    }
 
 
 

@@ -98,5 +98,16 @@ public class WalletController {
         return ResponseEntity.ok(walletResponseDto);
     }
 
+    @GetMapping("/internal/user/{userId}")
+    ResponseEntity<WalletResponseDto> getWalletByUserId(@PathVariable("userId") Long userId){
+        logger.info("Internal call: getWalletByUserId, userId: {}", userId);
+
+        WalletResponseDto walletResponseDto = walletService.getWalletByUserId(userId);
+        logger.info("Internal call: getWalletByUserId, walletResponseDto : {}", walletResponseDto);
+
+        return ResponseEntity.ok(walletResponseDto);
+
+    }
+
 
 }

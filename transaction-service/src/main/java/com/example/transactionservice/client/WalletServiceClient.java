@@ -21,4 +21,7 @@ public interface WalletServiceClient {
     @PostMapping("/api/wallets/internal/{walletId}/credit")
     WalletResponseDto credit(@PathVariable Long walletId, @RequestBody BigDecimal amount);
 
+    @GetMapping("api/wallets/internal/user/{userId}")
+    WalletResponseDto getWalletByUserId(@PathVariable("userId") Long userId);
+
 }

@@ -14,5 +14,6 @@ public interface WalletService {
     WalletResponseDto getWalletById(Long walletId);
     WalletResponseDto debit(Long walletId, BigDecimal amount);
     WalletResponseDto credit(Long walletId, BigDecimal amount);
+    WalletResponseDto getWalletByUserId(Long userId);
 
 }

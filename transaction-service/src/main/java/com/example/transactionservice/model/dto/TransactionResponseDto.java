@@ -17,4 +17,5 @@ public class TransactionResponseDto {
     private TransactionStatus status;
     private String description;
     private LocalDateTime transactionDate;
+    private LocalDateTime createdAt;   // optional
 }

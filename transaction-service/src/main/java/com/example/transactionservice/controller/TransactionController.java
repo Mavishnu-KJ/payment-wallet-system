@@ -1,5 +1,6 @@
 package com.example.transactionservice.controller;
 
+import com.example.transactionservice.model.dto.MeTransferRequestDto;
 import com.example.transactionservice.model.dto.TransactionResponseDto;
 import com.example.transactionservice.model.dto.TransferRequestDto;
 import com.example.transactionservice.security.CurrentUser;
@@ -50,4 +51,19 @@ public class TransactionController {
 
         return ResponseEntity.ok(transactionResponseDtoList);
     }
+
+    @PostMapping("/me/transfer")
+    ResponseEntity<TransactionResponseDto> meTransfer(@Valid @RequestBody MeTransferRequestDto meTransferRequestDto){
+        logger.info("meTransfer, meTransferRequestDto is {}", meTransferRequestDto);
+
+        //This CurrentUser class we are using for controller endpoint logger only
+        String username = currentUser.getCurrentUsername();
+        logger.info("meTransfer, called by username : {}", username);
+
+        TransactionResponseDto transactionResponseDto = transactionService.meTransfer(meTransferRequestDto);
+        logger.info("meTransfer, transactionResponseDto is {}", transactionResponseDto);
+
+        return ResponseEntity.ok(transactionResponseDto);
+    }
+
 }
