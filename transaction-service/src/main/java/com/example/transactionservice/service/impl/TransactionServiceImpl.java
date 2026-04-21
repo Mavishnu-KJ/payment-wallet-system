@@ -6,10 +6,7 @@ import com.example.transactionservice.exceptions.InsufficientBalanceException;
 import com.example.transactionservice.exceptions.ResourceNotFoundException;
 import com.example.transactionservice.model.dto.*;
 import com.example.transactionservice.model.entity.Transaction;
-import com.example.transactionservice.model.enums.TransactionStatus;
-import com.example.transactionservice.model.enums.TransactionType;
-import com.example.transactionservice.model.enums.UserStatus;
-import com.example.transactionservice.model.enums.WalletStatus;
+import com.example.transactionservice.model.enums.*;
 import com.example.transactionservice.repository.TransactionRepository;
 import com.example.transactionservice.security.CurrentUser;
 import com.example.transactionservice.service.TransactionService;
@@ -18,6 +15,10 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -227,7 +228,57 @@ public class TransactionServiceImpl implements TransactionService {
 
     }
 
+    public Page<TransactionResponseDto> getMyTransactionHistory(int page, int size){
+        logger.info("getMyTransactionHistory, page is {}, size is {}", page, size);
 
+        //Get current logged-in user from User Service
+        UserResponseDto currentUserResponseDto = userServiceClient.getCurrentUser();
+        logger.info("getMyTransactionHistory, currentUserResponseDto is {}", currentUserResponseDto);
+
+        if(currentUserResponseDto == null || currentUserResponseDto.getUserStatus() != UserStatus.ACTIVE){
+            throw new ResourceNotFoundException("User not found or inactive");
+        }
+
+        Long loggedInUserId = currentUserResponseDto.getUserId();
+        logger.info("getMyTransactionHistory, loggedInUserId is {}", loggedInUserId);
+
+        //Get user's wallet
+        WalletResponseDto wallet = walletServiceClient.getWalletByUserId(loggedInUserId);
+
+        if (wallet == null) {
+            throw new ResourceNotFoundException("Wallet not found for logged-in user, loggedInUserId : "+loggedInUserId);
+        }
+
+        Long userWalletId = wallet.getId();
+        logger.info("getMyTransactionHistory, userWalletId is {}", userWalletId);
+
+        // Fetch paginated history
+        Pageable pageable = PageRequest.of(page, size, Sort.by("transactionDate").descending());
+
+        Page<Transaction> transactionPage = transactionRepository
+                .findByFromWalletIdOrToWalletId(pageable, userWalletId, userWalletId);
+
+        logger.info("getMyTransactionHistory, page size : {}, walletId : {}, page : {}",
+                transactionPage.getContent().size(), userWalletId, page);
+
+        Page<TransactionResponseDto> transactionResponseDtoPage = transactionPage
+                .map(txn -> {
+                   TransactionResponseDto transactionResponseDto = modelMapper.map(txn, TransactionResponseDto.class);
+
+                    // From user's perspective
+                    if (txn.getFromWalletId().equals(userWalletId)) {
+                        transactionResponseDto.setTransactionDisplayType(TransactionDisplayType.DEBIT);
+                    } else {
+                        transactionResponseDto.setTransactionDisplayType(TransactionDisplayType.CREDIT);
+                    }
+
+                   return transactionResponseDto;
+                });
+
+        logger.info("getMyTransactionHistory, transactionResponseDtoPage is {}", transactionResponseDtoPage);
+
+        return transactionResponseDtoPage;
+    }
 
 
 

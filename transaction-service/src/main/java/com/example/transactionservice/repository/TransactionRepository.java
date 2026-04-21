@@ -1,6 +1,8 @@
 package com.example.transactionservice.repository;
 
 import com.example.transactionservice.model.entity.Transaction;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -15,5 +17,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     //Combined history for a wallet (sent + received)
     List<Transaction> findByFromWalletIdOrToWalletIdOrderByTransactionDateDesc(Long fromWalletId, Long toWalletId);
+
+    Page<Transaction> findByFromWalletIdOrToWalletId(Pageable pageable, Long fromWalletId, Long toWalletId);
 
 }

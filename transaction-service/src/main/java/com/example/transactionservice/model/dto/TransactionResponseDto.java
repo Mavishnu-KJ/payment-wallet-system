@@ -1,5 +1,6 @@
 package com.example.transactionservice.model.dto;
 
+import com.example.transactionservice.model.enums.TransactionDisplayType;
 import com.example.transactionservice.model.enums.TransactionStatus;
 import com.example.transactionservice.model.enums.TransactionType;
 import lombok.Data;
@@ -14,8 +15,10 @@ public class TransactionResponseDto {
     private Long toWalletId;
     private BigDecimal amount;
     private TransactionType type;
+    private TransactionDisplayType transactionDisplayType; //Only at DTO level
     private TransactionStatus status;
     private String description;
     private LocalDateTime transactionDate;
     private LocalDateTime createdAt;   // optional
+
 }
