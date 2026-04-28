@@ -16,4 +16,8 @@ public interface WalletService {
     WalletResponseDto credit(Long walletId, BigDecimal amount);
     WalletResponseDto getWalletByUserId(Long userId);
 
+    //New cache-related methods - added for Redis
+    WalletResponseDto getWalletWithCache(Long userId);
+    void evictWalletCache(Long userId);
+
 }

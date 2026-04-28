@@ -17,9 +17,11 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Data
@@ -29,8 +31,10 @@ public class WalletServiceImpl implements WalletService {
     private final WalletRepository walletRepository;
     private final ModelMapper modelMapper;
     private final UserServiceClient userServiceClient;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     private static final Logger logger = LoggerFactory.getLogger(WalletServiceImpl.class);
+    private static final String WALLET_CACHE_KEY = "wallet:";
 
     @Override
     @Transactional
@@ -65,6 +69,9 @@ public class WalletServiceImpl implements WalletService {
         Wallet savedWallet = walletRepository.save(wallet);
         logger.info("addMoney, savedWallet is {}", savedWallet);
 
+        //Redis related: Evict cache after write
+        evictWalletCache(savedWallet.getUserId());
+
         //Map entity to response dto
         WalletResponseDto walletResponseDto = modelMapper.map(savedWallet, WalletResponseDto.class);
         logger.info("addMoney, walletResponseDto is {}", walletResponseDto);
@@ -88,12 +95,7 @@ public class WalletServiceImpl implements WalletService {
         logger.info("getMyWallet, userId is {}", userId);
 
         //Find wallet for the userId
-        Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for the UserId : "+userId));
-        logger.info("getMyWallet, wallet is {}", wallet);
-
-        //Map entity to response dto
-        WalletResponseDto walletResponseDto = modelMapper.map(wallet, WalletResponseDto.class);
+        WalletResponseDto walletResponseDto = getWalletWithCache(userId);
         logger.info("getMyWallet, walletResponseDto is {}", walletResponseDto);
 
         return walletResponseDto;
@@ -115,16 +117,16 @@ public class WalletServiceImpl implements WalletService {
         logger.info("getMyWalletBalance, userId is {}", userId);
 
         //Find wallet for the userId
-        Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for the userId : "+userId));
+        WalletResponseDto walletResponseDto = getWalletWithCache(userId);
+        logger.info("getMyWalletBalance, walletResponseDto is {}", walletResponseDto);
 
-        logger.info("getMyWalletBalance, wallet is {}", wallet);
-
-        return wallet.getBalance();
+        return walletResponseDto.getBalance();
     }
 
     //Helper method
     private Wallet createNewWallet(Long userId) {
+        logger.info("createNewWallet, for userId: {}", userId);
+
         Wallet wallet = new Wallet();
         wallet.setUserId(userId);
         wallet.setBalance(BigDecimal.ZERO);
@@ -173,6 +175,9 @@ public class WalletServiceImpl implements WalletService {
         logger.info("Internal debit, savedWallet is {}", savedWallet);
         logger.info("Internal debit, Debit successful. New balance: {}", savedWallet.getBalance());
 
+        //Redis related: Evict cache after write
+        evictWalletCache(savedWallet.getUserId());
+
         WalletResponseDto walletResponseDto = modelMapper.map(savedWallet, WalletResponseDto.class);
         logger.info("Internal debit, walletResponseDto is {}", walletResponseDto);
 
@@ -199,6 +204,9 @@ public class WalletServiceImpl implements WalletService {
         logger.info("Internal credit, savedWallet is {}", savedWallet);
         logger.info("Internal credit, Credit successful. New balance: {}", savedWallet.getBalance());
 
+        //Redis related: Evict cache after write
+        evictWalletCache(savedWallet.getUserId());
+
         WalletResponseDto walletResponseDto = modelMapper.map(savedWallet, WalletResponseDto.class);
         logger.info("Internal credit, walletResponseDto is {}", walletResponseDto);
 
@@ -209,16 +217,54 @@ public class WalletServiceImpl implements WalletService {
     public WalletResponseDto getWalletByUserId(Long userId){
         logger.info("Internal getWalletByUserId, userId: {}", userId);
 
+        WalletResponseDto walletResponseDto = getWalletWithCache(userId);
+        logger.info("Internal getWalletByUserId, walletResponseDto: {}", walletResponseDto);
+
+        return walletResponseDto;
+
+    }
+
+    // ==================== CACHE-AWARE METHODS ====================
+
+    // Main method with Cache-Aside Pattern
+    public WalletResponseDto getWalletWithCache(Long userId) {
+        logger.info("getWalletWithCache, userId is {}", userId);
+
+        String cacheKey = WALLET_CACHE_KEY + userId;
+        logger.info("getWalletWithCache, cacheKey is {}", cacheKey);
+
+        // Step 1: Check Redis Cache
+        WalletResponseDto cachedWallet = (WalletResponseDto) redisTemplate.opsForValue().get(cacheKey);
+        if (cachedWallet != null) {
+            logger.info("getWalletWithCache, Wallet cache hit for userId: {}", userId);
+            return cachedWallet;
+        }
+
+        logger.info("getWalletWithCache, Wallet cache miss for userId: {}", userId);
+
+        // Step 2: Fetch from Database
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for the userId : "+userId));
-        logger.info("Internal getWalletByUserId, wallet is {}", wallet);
+        logger.info("getWalletWithCache, wallet is {}", wallet);
 
         WalletResponseDto walletResponseDto = modelMapper.map(wallet, WalletResponseDto.class);
-        logger.info("Internal getWalletByUserId, walletResponseDto is {}", walletResponseDto);
+        logger.info("getWalletWithCache, walletResponseDto is {}", walletResponseDto);
+
+        // Step 3: Cache the result
+        redisTemplate.opsForValue().set(cacheKey, walletResponseDto, 10, TimeUnit.MINUTES); // 10 min TTL
 
         return walletResponseDto;
     }
 
+    // Call this after every write operation (addMoney, debit, credit)
+    public void evictWalletCache(Long userId) {
+        logger.info("evictWalletCache, userId is {}", userId);
 
+        String cacheKey = WALLET_CACHE_KEY + userId;
+        logger.info("evictWalletCache, cacheKey is {}", cacheKey);
+
+        redisTemplate.delete(cacheKey);
+        logger.info("evictWalletCache, Wallet cache evicted for userId: {}", userId);
+    }
 
 }

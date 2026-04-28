@@ -73,6 +73,14 @@
                 <version>4.3.0</version>
             </dependency>
 
+            <!-- Redis -->
+            <!-- Source: https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-redis -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-data-redis</artifactId>
+                <version>3.5.9</version>   <!-- Match your Spring Boot version -->
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
