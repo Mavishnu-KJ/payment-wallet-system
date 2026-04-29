@@ -3,6 +3,7 @@ package com.example.walletservice.controller;
 import com.example.walletservice.model.dto.AddMoneyRequestDto;
 import com.example.walletservice.model.dto.WalletResponseDto;
 import com.example.walletservice.security.CurrentUser;
+import com.example.walletservice.service.RedisLockService;
 import com.example.walletservice.service.WalletService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ public class WalletController {
 
     private final WalletService walletService;
     private final CurrentUser currentUser;
+    private final RedisLockService redisLockService;
 
     private static final Logger logger = LoggerFactory.getLogger(WalletController.class);
 
@@ -107,6 +109,27 @@ public class WalletController {
 
         return ResponseEntity.ok(walletResponseDto);
 
+    }
+
+    //Methods related to Redis, Distributed locking
+    @PostMapping("/internal/{walletId}/acquireLock")
+    ResponseEntity<Boolean> acquireLock(@PathVariable Long walletId, @RequestParam(defaultValue = "60") long timeoutSeconds) {
+        logger.info("Internal call: acquireLockWithTimeout, walletId: {}, timeoutSeconds: {}", walletId, timeoutSeconds);
+
+        boolean lockAcquired = redisLockService.acquireLockWithTimeout(walletId, timeoutSeconds);
+        logger.info("Internal call: acquireLockWithTimeout, lockAcquired is {}", lockAcquired);
+
+        return ResponseEntity.ok(lockAcquired);
+    }
+
+    @PostMapping("/internal/{walletId}/releaseLock")
+    ResponseEntity<Void> releaseLock(@PathVariable Long walletId) {
+        logger.info("Internal call: releaseLock, walletId: {}", walletId);
+
+        redisLockService.releaseLock(walletId);
+        logger.info("Internal call: releaseLock completed for walletId: {}", walletId);
+
+        return ResponseEntity.ok().build();         // 200 OK with no body
     }
 
 
