@@ -186,7 +186,7 @@ public class TransactionServiceImpl implements TransactionService {
         long fromWalletId = fromWallet.getId();
         long toWalletId = toWallet.getId();
 
-        boolean lockAcquired = walletServiceClient.acquireLock(fromWalletId, 30); // 30 seconds timeout
+        boolean lockAcquired = walletServiceClient.acquireLock(fromWalletId, 600); // 10 minutes timeout for testing purpose
         if (!lockAcquired) {
             throw new IllegalStateException("Another operation is in progress on this wallet. Please try again later.");
         }
@@ -234,7 +234,10 @@ public class TransactionServiceImpl implements TransactionService {
             logger.error("meTransfer failed for txn: {}", transaction.getTransactionId(), e);
 
             //Still save failed transaction (optional but recommended)
-            transactionRepository.save(transaction);
+            // Only save if critical fields are set
+            if (transaction.getTransactionId() != null && transaction.getAmount() != null) {
+                transactionRepository.save(transaction);
+            }
 
             throw e; // rollback will happen due to @Transactional
         } finally {

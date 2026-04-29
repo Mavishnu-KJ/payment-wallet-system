@@ -25,7 +25,7 @@ public interface WalletServiceClient {
     @PostMapping("/api/wallets/internal/{walletId}/acquireLock")
     boolean acquireLock(@PathVariable Long walletId, @RequestParam(defaultValue = "60") long timeoutSeconds);
 
-    @PostMapping("/internal/{walletId}/releaseLock")
+    @PostMapping("/api/wallets/internal/{walletId}/releaseLock")
     Void releaseLock(@PathVariable Long walletId);
 
 }
