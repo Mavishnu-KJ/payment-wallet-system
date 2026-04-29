@@ -160,46 +160,32 @@ public class WalletServiceImpl implements WalletService {
     public WalletResponseDto debit(Long walletId, BigDecimal amount) {
         logger.info("Internal debit, walletId: {}, amount: {}", walletId, amount);
 
-        //Acquire distributed lock
-        boolean lockAcquired = redisLockService.acquireLockWithTimeout(walletId, LOCK_TIMEOUT_SECONDS);
-        logger.info("Internal debit, lockAcquired is {}", lockAcquired);
+        Wallet wallet = walletRepository.findById(walletId)
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for the walletId : " + walletId));
+        logger.info("Internal debit, wallet is {}", wallet);
 
-        if (!lockAcquired) {
-            throw new IllegalStateException("Another operation is in progress on this wallet. Please try again later.");
+        if (wallet.getStatus() != WalletStatus.ACTIVE) {
+            throw new IllegalStateException("Wallet is not active");
         }
 
-        try{
-
-            Wallet wallet = walletRepository.findById(walletId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for the walletId : " + walletId));
-            logger.info("Internal debit, wallet is {}", wallet);
-
-            if (wallet.getStatus() != WalletStatus.ACTIVE) {
-                throw new IllegalStateException("Wallet is not active");
-            }
-
-            if (wallet.getBalance().compareTo(amount) < 0) {
-                throw new InsufficientBalanceException("Insufficient balance for debit operation");
-            }
-
-            //Debit amount
-            wallet.setBalance(wallet.getBalance().subtract(amount));
-
-            Wallet savedWallet = walletRepository.save(wallet);
-            logger.info("Internal debit, savedWallet is {}", savedWallet);
-            logger.info("Internal debit, Debit successful. New balance: {}", savedWallet.getBalance());
-
-            //Redis related: Evict cache after write
-            evictWalletCache(savedWallet.getUserId());
-
-            WalletResponseDto walletResponseDto = modelMapper.map(savedWallet, WalletResponseDto.class);
-            logger.info("Internal debit, walletResponseDto is {}", walletResponseDto);
-
-            return walletResponseDto;
-        } finally {
-            //Always release the lock
-            redisLockService.releaseLock(walletId);
+        if (wallet.getBalance().compareTo(amount) < 0) {
+            throw new InsufficientBalanceException("Insufficient balance for debit operation");
         }
+
+        //Debit amount
+        wallet.setBalance(wallet.getBalance().subtract(amount));
+
+        Wallet savedWallet = walletRepository.save(wallet);
+        logger.info("Internal debit, savedWallet is {}", savedWallet);
+        logger.info("Internal debit, Debit successful. New balance: {}", savedWallet.getBalance());
+
+        //Redis related: Evict cache after write
+        evictWalletCache(savedWallet.getUserId());
+
+        WalletResponseDto walletResponseDto = modelMapper.map(savedWallet, WalletResponseDto.class);
+        logger.info("Internal debit, walletResponseDto is {}", walletResponseDto);
+
+        return walletResponseDto;
 
     }
 
@@ -208,37 +194,28 @@ public class WalletServiceImpl implements WalletService {
     public WalletResponseDto credit(Long walletId, BigDecimal amount) {
         logger.info("Internal credit, walletId: {}, amount: {}", walletId, amount);
 
-        //Acquire distributed lock
-        boolean lockAcquired = redisLockService.acquireLockWithTimeout(walletId, LOCK_TIMEOUT_SECONDS);
-        logger.info("Internal credit, lockAcquired is {}", lockAcquired);
+        Wallet wallet = walletRepository.findById(walletId)
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for the walletId : " + walletId));
+        logger.info("Internal credit, wallet is {}", wallet);
 
-        try {
-            Wallet wallet = walletRepository.findById(walletId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for the walletId : " + walletId));
-            logger.info("Internal credit, wallet is {}", wallet);
-
-            if (wallet.getStatus() != WalletStatus.ACTIVE) {
-                throw new IllegalStateException("Wallet is not active");
-            }
-
-            //Credit
-            wallet.setBalance(wallet.getBalance().add(amount));
-
-            Wallet savedWallet = walletRepository.save(wallet);
-            logger.info("Internal credit, savedWallet is {}", savedWallet);
-            logger.info("Internal credit, Credit successful. New balance: {}", savedWallet.getBalance());
-
-            //Redis related: Evict cache after write
-            evictWalletCache(savedWallet.getUserId());
-
-            WalletResponseDto walletResponseDto = modelMapper.map(savedWallet, WalletResponseDto.class);
-            logger.info("Internal credit, walletResponseDto is {}", walletResponseDto);
-
-            return walletResponseDto;
-        }finally {
-            //Always release the lock
-            redisLockService.releaseLock(walletId);
+        if (wallet.getStatus() != WalletStatus.ACTIVE) {
+            throw new IllegalStateException("Wallet is not active");
         }
+
+        //Credit
+        wallet.setBalance(wallet.getBalance().add(amount));
+
+        Wallet savedWallet = walletRepository.save(wallet);
+        logger.info("Internal credit, savedWallet is {}", savedWallet);
+        logger.info("Internal credit, Credit successful. New balance: {}", savedWallet.getBalance());
+
+        //Redis related: Evict cache after write
+        evictWalletCache(savedWallet.getUserId());
+
+        WalletResponseDto walletResponseDto = modelMapper.map(savedWallet, WalletResponseDto.class);
+        logger.info("Internal credit, walletResponseDto is {}", walletResponseDto);
+
+        return walletResponseDto;
     }
 
     @Override
