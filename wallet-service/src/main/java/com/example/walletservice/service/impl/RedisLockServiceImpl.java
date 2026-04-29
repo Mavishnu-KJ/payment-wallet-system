@@ -17,17 +17,16 @@ public class RedisLockServiceImpl implements RedisLockService {
     private static final Logger logger = LoggerFactory.getLogger(RedisLockServiceImpl.class);
 
     private static final String LOCK_PREFIX = "lock:wallet:";
-    private static final long LOCK_TIMEOUT_SECONDS = 120;
 
-    public boolean acquireLock(Long walletId) {
-        logger.info("acquireLock, walletId is {}", walletId);
+    public boolean acquireLockWithTimeout(Long walletId, long timeoutSeconds) {
+        logger.info("acquireLockWithTimeout, walletId is {}", walletId);
 
         String lockKey = LOCK_PREFIX + walletId;
-        logger.info("acquireLock, lockKey is {}", lockKey);
+        logger.info("acquireLockWithTimeout, lockKey is {}", lockKey);
 
         Boolean acquired = redisTemplate.opsForValue()
-                .setIfAbsent(lockKey, "LOCKED", LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        logger.info("acquireLock, acquired is {}", acquired);
+                .setIfAbsent(lockKey, "LOCKED", timeoutSeconds, TimeUnit.SECONDS);
+        logger.info("acquireLockWithTimeout, acquired is {}", acquired);
 
         return Boolean.TRUE.equals(acquired);
     }

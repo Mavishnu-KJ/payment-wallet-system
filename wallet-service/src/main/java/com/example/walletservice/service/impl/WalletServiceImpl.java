@@ -38,6 +38,8 @@ public class WalletServiceImpl implements WalletService {
     private static final Logger logger = LoggerFactory.getLogger(WalletServiceImpl.class);
     private static final String WALLET_CACHE_KEY = "wallet:";
 
+    private static final long LOCK_TIMEOUT_SECONDS = 120;
+
     @Override
     @Transactional
     public WalletResponseDto addMoney(AddMoneyRequestDto addMoneyRequestDto){
@@ -159,7 +161,7 @@ public class WalletServiceImpl implements WalletService {
         logger.info("Internal debit, walletId: {}, amount: {}", walletId, amount);
 
         //Acquire distributed lock
-        boolean lockAcquired = redisLockService.acquireLock(walletId);
+        boolean lockAcquired = redisLockService.acquireLockWithTimeout(walletId, LOCK_TIMEOUT_SECONDS);
         logger.info("Internal debit, lockAcquired is {}", lockAcquired);
 
         if (!lockAcquired) {
@@ -207,7 +209,7 @@ public class WalletServiceImpl implements WalletService {
         logger.info("Internal credit, walletId: {}, amount: {}", walletId, amount);
 
         //Acquire distributed lock
-        boolean lockAcquired = redisLockService.acquireLock(walletId);
+        boolean lockAcquired = redisLockService.acquireLockWithTimeout(walletId, LOCK_TIMEOUT_SECONDS);
         logger.info("Internal credit, lockAcquired is {}", lockAcquired);
 
         try {

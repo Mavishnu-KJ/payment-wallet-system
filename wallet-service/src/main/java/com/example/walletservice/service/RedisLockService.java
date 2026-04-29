@@ -1,6 +1,6 @@
 package com.example.walletservice.service;
 
 public interface RedisLockService {
-    boolean acquireLock(Long walletId);
+    boolean acquireLockWithTimeout(Long walletId, long timeoutSeconds);
     void releaseLock(Long walletId);
 }
