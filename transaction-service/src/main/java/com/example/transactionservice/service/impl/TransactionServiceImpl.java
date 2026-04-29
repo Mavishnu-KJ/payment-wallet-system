@@ -188,7 +188,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         boolean lockAcquired = walletServiceClient.acquireLock(fromWalletId, 600); // 10 minutes timeout for testing purpose
         if (!lockAcquired) {
-            throw new IllegalStateException("Another operation is in progress on this wallet. Please try again later.");
+            throw new IllegalStateException("Due to DistributedLocking, another operation is in progress on this wallet. Please try again later.");
         }
 
         Transaction transaction = new Transaction();

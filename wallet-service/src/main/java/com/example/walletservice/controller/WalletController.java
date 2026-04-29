@@ -114,7 +114,7 @@ public class WalletController {
     //Methods related to Redis, Distributed locking
     @PostMapping("/internal/{walletId}/acquireLock")
     ResponseEntity<Boolean> acquireLock(@PathVariable Long walletId, @RequestParam(defaultValue = "60") long timeoutSeconds) {
-        logger.info("Internal call: acquireLockWithTimeout, walletId: {}, timeoutSeconds: {}", walletId, timeoutSeconds);
+        logger.info("Internal call: DistributedLocking : acquireLockWithTimeout, walletId: {}, timeoutSeconds: {}", walletId, timeoutSeconds);
 
         boolean lockAcquired = redisLockService.acquireLockWithTimeout(walletId, timeoutSeconds);
         logger.info("Internal call: acquireLockWithTimeout, lockAcquired is {}", lockAcquired);
@@ -124,10 +124,10 @@ public class WalletController {
 
     @PostMapping("/internal/{walletId}/releaseLock")
     ResponseEntity<Void> releaseLock(@PathVariable Long walletId) {
-        logger.info("Internal call: releaseLock, walletId: {}", walletId);
+        logger.info("Internal call: DistributedLocking :releaseLock, walletId: {}", walletId);
 
         redisLockService.releaseLock(walletId);
-        logger.info("Internal call: releaseLock completed for walletId: {}", walletId);
+        logger.info("Internal call: DistributedLocking :releaseLock completed for walletId: {}", walletId);
 
         return ResponseEntity.ok().build();         // 200 OK with no body
     }
