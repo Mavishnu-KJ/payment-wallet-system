@@ -183,49 +183,65 @@ public class TransactionServiceImpl implements TransactionService {
             throw new IllegalArgumentException("Cannot transfer money to your own wallet");
         }
 
-        // Step 5: Check sufficient balance
-        if (fromWallet.getBalance().compareTo(meTransferRequestDto.getAmount()) < 0) {
-            throw new InsufficientBalanceException("Insufficient balance in source wallet");
+        long fromWalletId = fromWallet.getId();
+        long toWalletId = toWallet.getId();
+
+        boolean lockAcquired = walletServiceClient.acquireLock(fromWalletId, 30); // 30 seconds timeout
+        if (!lockAcquired) {
+            throw new IllegalStateException("Another operation is in progress on this wallet. Please try again later.");
         }
 
-        // Step 6: Create Transaction record (PENDING)
         Transaction transaction = new Transaction();
-        transaction.setTransactionId("TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        transaction.setFromWalletId(fromWallet.getId());
-        transaction.setToWalletId(meTransferRequestDto.getToWalletId());
-        transaction.setAmount(meTransferRequestDto.getAmount());
-        transaction.setType(TransactionType.TRANSFER);
-        transaction.setStatus(TransactionStatus.PENDING);
-        transaction.setDescription(meTransferRequestDto.getDescription());
-        transaction.setTransactionDate(LocalDateTime.now());
+        try{
+            // Step 5: Check sufficient balance
+            if (fromWallet.getBalance().compareTo(meTransferRequestDto.getAmount()) < 0) {
+                throw new InsufficientBalanceException("Insufficient balance in source wallet");
+            }
 
-        // Step 7: Perform the actual money transfer (Atomic)
-        try {
+            // Step 6: Create Transaction record (PENDING)
+            //Transaction transaction = new Transaction();
+            transaction.setTransactionId("TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+            transaction.setFromWalletId(fromWalletId);
+            transaction.setToWalletId(toWalletId);
+            transaction.setAmount(meTransferRequestDto.getAmount());
+            transaction.setType(TransactionType.TRANSFER);
+            transaction.setStatus(TransactionStatus.PENDING);
+            transaction.setDescription(meTransferRequestDto.getDescription());
+            transaction.setTransactionDate(LocalDateTime.now());
+
+            // Step 7: Perform the actual money transfer (Atomic)
 
             //Perform atomic transfer
             // Debit from source wallet
-            walletServiceClient.debit(fromWallet.getId(), meTransferRequestDto.getAmount());
+            walletServiceClient.debit(fromWalletId, meTransferRequestDto.getAmount());
 
             // Credit to destination wallet
-            walletServiceClient.credit(meTransferRequestDto.getToWalletId(), meTransferRequestDto.getAmount());
+            walletServiceClient.credit(toWalletId, meTransferRequestDto.getAmount());
 
             // Mark transaction as SUCCESS
             transaction.setStatus(TransactionStatus.SUCCESS);
 
             logger.info("meTransfer successful: {}", transaction.getTransactionId());
 
+            // Step 8: Save transaction record
+            Transaction savedTransaction = transactionRepository.save(transaction);
+            logger.info("meTransfer successful, savedTransaction is {}", savedTransaction);
+
+            return modelMapper.map(savedTransaction, TransactionResponseDto.class);
+
         } catch (Exception e) {
             transaction.setStatus(TransactionStatus.FAILED);
             logger.error("meTransfer failed for txn: {}", transaction.getTransactionId(), e);
+
+            //Still save failed transaction (optional but recommended)
+            transactionRepository.save(transaction);
+
             throw e; // rollback will happen due to @Transactional
+        } finally {
+            //Always release the lock
+            walletServiceClient.releaseLock(fromWalletId);
+            logger.info("Lock released for walletId: {}", fromWalletId);
         }
-
-        // Step 8: Save transaction record
-        Transaction savedTransaction = transactionRepository.save(transaction);
-        logger.info("meTransfer successful, savedTransaction is {}", savedTransaction);
-
-        return modelMapper.map(savedTransaction, TransactionResponseDto.class);
-
     }
 
     public Page<TransactionResponseDto> getMyTransactionHistory(int page, int size){

@@ -2,10 +2,8 @@ package com.example.transactionservice.client;
 
 import com.example.transactionservice.model.dto.WalletResponseDto;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 
@@ -23,5 +21,11 @@ public interface WalletServiceClient {
 
     @GetMapping("api/wallets/internal/user/{userId}")
     WalletResponseDto getWalletByUserId(@PathVariable("userId") Long userId);
+
+    @PostMapping("/api/wallets/internal/{walletId}/acquireLock")
+    boolean acquireLock(@PathVariable Long walletId, @RequestParam(defaultValue = "60") long timeoutSeconds);
+
+    @PostMapping("/internal/{walletId}/releaseLock")
+    Void releaseLock(@PathVariable Long walletId);
 
 }
