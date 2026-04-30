@@ -97,6 +97,12 @@
             <artifactId>lettuce-core</artifactId>
         </dependency>
 
+        <!-- Swagger OpenAPI UI - Latest stable version -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+
     </dependencies>
 
     <properties>

@@ -13,3 +13,14 @@ user-service:
 # secret key for jwt token
 jwt:
   secret: "PaymentWalletSystemStrongSecretKeyAtLeast64CharsLongAndRandomWithoutUnderScore"
+
+#Disable default security - important
+spring:
+  security:
+    user:
+      name: ""      # Disable default user
+      password: ""
+
+#User Service URL (used when running locally without Eureka)
+wallet-service:
+  url: http://localhost:8081

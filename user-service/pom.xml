@@ -79,6 +79,12 @@
             <artifactId>modelmapper</artifactId>
             <scope>compile</scope>
         </dependency>
+
+        <!-- Swagger OpenAPI UI - Latest stable version -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

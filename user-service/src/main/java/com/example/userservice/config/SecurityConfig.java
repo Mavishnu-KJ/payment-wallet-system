@@ -28,6 +28,14 @@ public class SecurityConfig {
         httpSecurity
             .csrf(csrf -> csrf.disable())  // disable CSRF for dev (enable later)
             .authorizeHttpRequests(auth -> auth
+                    // Allow Swagger UI and OpenAPI endpoints
+                    .requestMatchers(
+                            "/swagger-ui/**",
+                            "/swagger-ui.html",
+                            "/v3/api-docs/**",
+                            "/swagger-resources/**",
+                            "/webjars/**"
+                    ).permitAll()
                     .requestMatchers("/api/users/register", "/api/users", "/api/users/{id}", "/api/users/login").permitAll()  // ← public register endpoint
                     .anyRequest().authenticated()  // everything else requires auth
             ).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
