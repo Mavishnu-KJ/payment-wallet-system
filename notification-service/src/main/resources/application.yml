@@ -1,0 +1,41 @@
+server:
+  port: 8084      # ← This forces the service to run ONLY on port mentioned
+
+# Optional but useful settings
+Spring:
+  Application:
+    name: notification-service
+
+# If you have other configs
+notification-service:
+  url: http://localhost:8084
+
+# secret key for jwt token
+jwt:
+  secret: "PaymentWalletSystemStrongSecretKeyAtLeast64CharsLongAndRandomWithoutUnderScore"
+
+#Disable default security - important
+spring:
+  security:
+    user:
+      name: ""      # Disable default user
+      password: ""
+
+#Feign Configuration
+feign:
+  client:
+    config:
+      user-service:
+        connectTimeout: 5000
+        readTimeout: 5000
+
+#User Service URL (used when running locally without Eureka)
+user-service:
+  url: http://localhost:8081
+
+wallet-service:
+  url: http://localhost:8082
+
+transaction-service:
+  url: http://localhost:8083
+
