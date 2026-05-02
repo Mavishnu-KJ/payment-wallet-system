@@ -33,3 +33,6 @@ feign:
 #Wallet Service URL (used when running locally without Eureka)
 wallet-service:
   url: http://localhost:8082
+
+notification-service:
+  url: http://localhost:8084

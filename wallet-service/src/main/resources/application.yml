@@ -33,6 +33,9 @@ feign:
 user-service:
   url: http://localhost:8081
 
+notification-service:
+  url: http://localhost:8084
+
 #Redis configuration
 #spring: //already in code so commented here
   data:
