@@ -1,7 +1,10 @@
 package com.example.notificationservice.model.dto;
 
+import lombok.Data;
+
 import java.time.LocalDateTime;
 
+@Data
 public class NotificationResponseDto {
     private String notificationId;
     private Long userId;
