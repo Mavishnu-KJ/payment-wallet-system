@@ -1,5 +1,6 @@
 package com.example.walletservice.service.impl;
 
+import com.example.walletservice.client.NotificationServiceClient;
 import com.example.walletservice.client.UserServiceClient;
 import com.example.walletservice.exceptions.InsufficientBalanceException;
 import com.example.walletservice.exceptions.ResourceNotFoundException;
@@ -34,6 +35,7 @@ public class WalletServiceImpl implements WalletService {
     private final UserServiceClient userServiceClient;
     private final RedisTemplate<String, Object> redisTemplate;
     private final RedisLockService redisLockService;
+    private final NotificationServiceClient notificationServiceClient;
 
     private static final Logger logger = LoggerFactory.getLogger(WalletServiceImpl.class);
     private static final String WALLET_CACHE_KEY = "wallet:";
@@ -72,6 +74,9 @@ public class WalletServiceImpl implements WalletService {
         //Save wallet
         Wallet savedWallet = walletRepository.save(wallet);
         logger.info("addMoney, savedWallet is {}", savedWallet);
+
+        //notification-service - send notification
+        notificationServiceClient.notifyAddMoney(userId, addMoneyRequestDto.getAmount());
 
         //Redis related: Evict cache after write
         evictWalletCache(savedWallet.getUserId());

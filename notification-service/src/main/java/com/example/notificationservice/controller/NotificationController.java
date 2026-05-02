@@ -18,8 +18,8 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class NotificationController {
 
-    private NotificationService notificationService;
-    private CurrentUser currentUser;
+    private final NotificationService notificationService;  //if not final it will be ignored by @RequiredArgsConstructor, injection wont be happen, so it will stay null
+    private final CurrentUser currentUser;
 
     private final static Logger logger = LoggerFactory.getLogger(NotificationController.class);
 

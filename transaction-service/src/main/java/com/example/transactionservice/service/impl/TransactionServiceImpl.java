@@ -1,5 +1,6 @@
 package com.example.transactionservice.service.impl;
 
+import com.example.transactionservice.client.NotificationServiceClient;
 import com.example.transactionservice.client.UserServiceClient;
 import com.example.transactionservice.client.WalletServiceClient;
 import com.example.transactionservice.exceptions.InsufficientBalanceException;
@@ -34,6 +35,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final ModelMapper modelMapper;
     private final WalletServiceClient walletServiceClient;
     private final UserServiceClient userServiceClient;
+    private final NotificationServiceClient notificationServiceClient;
 
     private final Logger logger = LoggerFactory.getLogger(TransactionServiceImpl.class);
 
@@ -227,11 +229,27 @@ public class TransactionServiceImpl implements TransactionService {
             Transaction savedTransaction = transactionRepository.save(transaction);
             logger.info("meTransfer successful, savedTransaction is {}", savedTransaction);
 
+            //notification-service - send notification
+            notificationServiceClient.notifyTransfer(
+                    fromWallet.getUserId(),
+                    toWallet.getUserId(),
+                    meTransferRequestDto.getAmount(),
+                    "SUCCESS"
+            );
+
             return modelMapper.map(savedTransaction, TransactionResponseDto.class);
 
         } catch (Exception e) {
             transaction.setStatus(TransactionStatus.FAILED);
             logger.error("meTransfer failed for txn: {}", transaction.getTransactionId(), e);
+
+            //notification-service - send notification
+            notificationServiceClient.notifyTransfer(
+                    fromWallet.getUserId(),
+                    toWallet.getUserId(),
+                    meTransferRequestDto.getAmount(),
+                    "FAILED"
+            );
 
             //Still save failed transaction (optional but recommended)
             // Only save if critical fields are set
