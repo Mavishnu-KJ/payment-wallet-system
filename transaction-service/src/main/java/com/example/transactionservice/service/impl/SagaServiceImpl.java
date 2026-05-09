@@ -54,6 +54,7 @@ public class SagaServiceImpl implements SagaService {
         long toWalletId = toWallet.getId();
         BigDecimal amount = meTransferRequestDto.getAmount();
 
+        //Generate unique transaction reference
         String transactionId = "TXN-" + UUID.randomUUID().toString().substring(0, 12).toUpperCase();
         logger.info("executeTransferSaga, transactionId is {}", transactionId);
 
