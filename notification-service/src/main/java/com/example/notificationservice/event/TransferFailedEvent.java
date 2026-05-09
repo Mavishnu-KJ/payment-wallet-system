@@ -1,7 +1,5 @@
 package com.example.notificationservice.event;
 
-import com.example.notificationservice.event.TransferEvent;
-
 import java.math.BigDecimal;
 
 public class TransferFailedEvent extends TransferEvent {
