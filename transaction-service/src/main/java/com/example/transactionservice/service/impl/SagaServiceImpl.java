@@ -2,6 +2,8 @@ package com.example.transactionservice.service.impl;
 
 import com.example.transactionservice.client.NotificationServiceClient;
 import com.example.transactionservice.client.WalletServiceClient;
+import com.example.transactionservice.event.TransferCompletedEvent;
+import com.example.transactionservice.event.TransferFailedEvent;
 import com.example.transactionservice.exceptions.ResourceNotFoundException;
 import com.example.transactionservice.model.dto.MeTransferRequestDto;
 import com.example.transactionservice.model.dto.WalletResponseDto;
@@ -14,6 +16,7 @@ import com.example.transactionservice.service.SagaService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +31,7 @@ public class SagaServiceImpl implements SagaService {
     private final WalletServiceClient walletServiceClient;
     private final NotificationServiceClient notificationServiceClient;
     private final TransactionRepository transactionRepository;
+    private final ApplicationEventPublisher applicationEventPublisher; //Spring provides ApplicationEventPublisher
 
     private static final Logger logger = LoggerFactory.getLogger(SagaServiceImpl.class);
 
@@ -84,13 +88,10 @@ public class SagaServiceImpl implements SagaService {
             transactionRepository.save(transaction);
             logger.info("executeTransferSaga, Saga transaction saved successfully, transaction is {}", transaction);
 
-            //Step 5: Send Notification
-            notificationServiceClient.notifyTransfer(
-                    fromWallet.getUserId(),
-                    toWallet.getUserId(),
-                    amount,
-                    "SUCCESS"
-            );
+            //Publish Event : SUCCESS
+            applicationEventPublisher.publishEvent(new TransferCompletedEvent(
+                    transactionId, fromWalletId, toWalletId, amount,
+                    fromWallet.getUserId(), toWallet.getUserId(), meTransferRequestDto.getDescription()));
 
             logger.info("executeTransferSaga, Saga completed successfully, transactionId is {}", transactionId);
 
@@ -109,12 +110,10 @@ public class SagaServiceImpl implements SagaService {
                 transactionRepository.save(transaction);
             }
 
-            notificationServiceClient.notifyTransfer(
-                    fromWallet.getUserId(),
-                    toWallet.getUserId(),
-                    amount,
-                    "FAILED"
-            );
+            //Publish Event : FAILED
+            applicationEventPublisher.publishEvent(new TransferFailedEvent(
+                    transactionId, fromWalletId, toWalletId, amount,
+                    fromWallet.getUserId(), toWallet.getUserId(), meTransferRequestDto.getDescription()));
 
         }
     }
