@@ -2,8 +2,6 @@ package com.example.transactionservice.service.impl;
 
 import com.example.transactionservice.client.NotificationServiceClient;
 import com.example.transactionservice.client.WalletServiceClient;
-import com.example.transactionservice.event.TransferCompletedEvent;
-import com.example.transactionservice.event.TransferFailedEvent;
 import com.example.transactionservice.exceptions.ResourceNotFoundException;
 import com.example.transactionservice.model.dto.MeTransferRequestDto;
 import com.example.transactionservice.model.dto.WalletResponseDto;
@@ -88,10 +86,13 @@ public class SagaServiceImpl implements SagaService {
             transactionRepository.save(transaction);
             logger.info("SAGA : executeTransferSaga, Saga transaction saved successfully, transaction is {}", transaction);
 
-            //Publish Event : SUCCESS
-            applicationEventPublisher.publishEvent(new TransferCompletedEvent(
-                    transactionId, fromWalletId, toWalletId, amount,
-                    fromWallet.getUserId(), toWallet.getUserId(), meTransferRequestDto.getDescription()));
+            //Send notification : SUCCESS
+            notificationServiceClient.notifyTransfer(
+                    fromWallet.getUserId(),
+                    toWallet.getUserId(),
+                    amount,
+                    "SUCCESS"
+            );
 
             logger.info("SAGA : executeTransferSaga, Saga completed successfully, transactionId is {}", transactionId);
 
@@ -110,10 +111,13 @@ public class SagaServiceImpl implements SagaService {
                 transactionRepository.save(transaction);
             }
 
-            //Publish Event : FAILED
-            applicationEventPublisher.publishEvent(new TransferFailedEvent(
-                    transactionId, fromWalletId, toWalletId, amount,
-                    fromWallet.getUserId(), toWallet.getUserId(), meTransferRequestDto.getDescription()));
+            //Send notification : FAILED
+            notificationServiceClient.notifyTransfer(
+                    fromWallet.getUserId(),
+                    toWallet.getUserId(),
+                    amount,
+                    "FAILED"
+            );
 
             throw new RuntimeException("executeTransferSaga, Transfer saga failed and compensated", e);
         }
