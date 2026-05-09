@@ -1,6 +1,7 @@
 package com.example.transactionservice.config;
 
 import com.example.transactionservice.exceptions.InsufficientBalanceException;
+import com.example.transactionservice.exceptions.ResourceConflictException;
 import com.example.transactionservice.exceptions.ResourceNotFoundException;
 import com.example.transactionservice.model.dto.ErrorResponse;
 import feign.FeignException;
@@ -30,6 +31,18 @@ public class GlobalExceptionHandler {
         );
 
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(ResourceConflictException.class)
+    ResponseEntity<ErrorResponse> handleResourceConflictException(ResourceConflictException e){
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                "Resource Conflict",
+                List.of(e.getMessage()),
+                LocalDateTime.now()
+        );
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
 
     //Returns the exact error body sent by client service

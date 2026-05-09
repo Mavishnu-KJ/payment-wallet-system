@@ -4,6 +4,7 @@ import com.example.transactionservice.client.NotificationServiceClient;
 import com.example.transactionservice.client.UserServiceClient;
 import com.example.transactionservice.client.WalletServiceClient;
 import com.example.transactionservice.exceptions.InsufficientBalanceException;
+import com.example.transactionservice.exceptions.ResourceConflictException;
 import com.example.transactionservice.exceptions.ResourceNotFoundException;
 import com.example.transactionservice.model.dto.*;
 import com.example.transactionservice.model.entity.Transaction;
@@ -196,7 +197,7 @@ public class TransactionServiceImpl implements TransactionService {
         Long fromWalletId = fromWallet.getId();
         boolean lockAcquired = walletServiceClient.acquireLock(fromWalletId, 60); // 60 seconds timeout
         if (!lockAcquired) {
-            throw new IllegalStateException("Due to DistributedLocking, another operation is in progress on this wallet. Please try again later.");
+            throw new ResourceConflictException("Due to DistributedLocking, another operation is in progress on this wallet. Please try again later.");
         }
         logger.info("P2P meTransfer, DistributedLocking lock acquired for fromWalletId : {}, amount : {}", fromWalletId, meTransferRequestDto.getAmount());
 
