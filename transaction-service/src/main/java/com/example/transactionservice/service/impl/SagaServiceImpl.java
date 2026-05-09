@@ -115,6 +115,7 @@ public class SagaServiceImpl implements SagaService {
                     transactionId, fromWalletId, toWalletId, amount,
                     fromWallet.getUserId(), toWallet.getUserId(), meTransferRequestDto.getDescription()));
 
+            throw new RuntimeException("executeTransferSaga, Transfer saga failed and compensated", e);
         }
     }
 
