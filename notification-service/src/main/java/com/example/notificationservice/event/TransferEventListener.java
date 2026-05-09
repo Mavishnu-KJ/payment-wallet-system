@@ -15,7 +15,7 @@ public class TransferEventListener {
 
     @EventListener
     public void handleTransferCompleted(TransferCompletedEvent event) {
-        log.info("handleTransferCompleted, Received TransferCompletedEvent: {}", event);
+        log.info("EVENT LISTENER : handleTransferCompleted, Received TransferCompletedEvent: {}", event);
         notificationService.sendTransferNotification(
                 event.getFromUserId(),
                 event.getToUserId(),
@@ -26,7 +26,7 @@ public class TransferEventListener {
 
     @EventListener
     public void handleTransferFailed(TransferFailedEvent event) {
-        log.info("handleTransferCompleted, Received TransferFailedEvent: {}", event);
+        log.info("EVENT LISTENER : handleTransferCompleted, Received TransferFailedEvent: {}", event);
         notificationService.sendTransferNotification(
                 event.getFromUserId(),
                 event.getToUserId(),
