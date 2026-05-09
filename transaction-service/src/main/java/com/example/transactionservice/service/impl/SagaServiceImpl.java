@@ -38,13 +38,13 @@ public class SagaServiceImpl implements SagaService {
     @Override
     @Transactional
     public void executeTransferSaga(MeTransferRequestDto meTransferRequestDto, Long fromUserId) {
-        logger.info("executeTransferSaga, meTransferRequestDto is {} and fromUserId is {}", meTransferRequestDto, fromUserId);
+        logger.info("SAGA : executeTransferSaga, meTransferRequestDto is {} and fromUserId is {}", meTransferRequestDto, fromUserId);
 
         WalletResponseDto fromWallet = walletServiceClient.getWalletByUserId(fromUserId);
-        logger.info("executeTransferSaga, fromWallet is {}", fromWallet);
+        logger.info("SAGA : executeTransferSaga, fromWallet is {}", fromWallet);
 
         WalletResponseDto toWallet = walletServiceClient.getWalletById(meTransferRequestDto.getToWalletId());
-        logger.info("executeTransferSaga, toWallet is {}", toWallet);
+        logger.info("SAGA : executeTransferSaga, toWallet is {}", toWallet);
 
         if(fromWallet == null || fromWallet.getStatus() != WalletStatus.ACTIVE){
             throw new ResourceNotFoundException("Your source wallet not found or inactive");
@@ -60,7 +60,7 @@ public class SagaServiceImpl implements SagaService {
 
         //Generate unique transaction reference
         String transactionId = "TXN-" + UUID.randomUUID().toString().substring(0, 12).toUpperCase();
-        logger.info("executeTransferSaga, transactionId is {}", transactionId);
+        logger.info("SAGA : executeTransferSaga, transactionId is {}", transactionId);
 
         Transaction transaction = new Transaction();
         transaction.setTransactionId(transactionId);
@@ -73,7 +73,7 @@ public class SagaServiceImpl implements SagaService {
         transaction.setTransactionDate(LocalDateTime.now());
 
         try {
-            logger.info("executeTransferSaga, Saga started, transaction is {}", transaction);
+            logger.info("SAGA : executeTransferSaga, Saga started, transaction is {}", transaction);
 
             //Step 1: Debit
             walletServiceClient.debit(fromWalletId, amount);
@@ -86,18 +86,18 @@ public class SagaServiceImpl implements SagaService {
 
             //Step 4 : Save transaction record
             transactionRepository.save(transaction);
-            logger.info("executeTransferSaga, Saga transaction saved successfully, transaction is {}", transaction);
+            logger.info("SAGA : executeTransferSaga, Saga transaction saved successfully, transaction is {}", transaction);
 
             //Publish Event : SUCCESS
             applicationEventPublisher.publishEvent(new TransferCompletedEvent(
                     transactionId, fromWalletId, toWalletId, amount,
                     fromWallet.getUserId(), toWallet.getUserId(), meTransferRequestDto.getDescription()));
 
-            logger.info("executeTransferSaga, Saga completed successfully, transactionId is {}", transactionId);
+            logger.info("SAGA : executeTransferSaga, Saga completed successfully, transactionId is {}", transactionId);
 
 
         } catch (Exception e) {
-            logger.error("executeTransferSaga, Saga failed for transaction: {}. Starting compensation...", transactionId, e);
+            logger.error("SAGA : executeTransferSaga, Saga failed for transaction: {}. Starting compensation...", transactionId, e);
 
             //Saga Compensation
             compensateTransfer(fromWalletId, toWalletId, amount, transactionId);
@@ -122,15 +122,15 @@ public class SagaServiceImpl implements SagaService {
     @Override
     public void compensateTransfer(Long fromWalletId, Long toWalletId, BigDecimal amount, String transactionId) {
 
-        logger.info("compensateTransfer, fromWalletId is {} and toWalletId is {}, amount is {}, transactionId is {}",
+        logger.info("SAGA : compensateTransfer, fromWalletId is {} and toWalletId is {}, amount is {}, transactionId is {}",
                 fromWalletId, toWalletId, amount, transactionId);
 
         try {
-            logger.info("compensateTransfer, Compensating: Refunding amount to source wallet");
+            logger.info("SAGA : compensateTransfer, Compensating: Refunding amount to source wallet");
             walletServiceClient.credit(fromWalletId, amount);   // refund
-            logger.info("compensateTransfer, Compensation completed for transaction: {}", transactionId);
+            logger.info("SAGA : compensateTransfer, Compensation completed for transaction: {}", transactionId);
         } catch (Exception ex) {
-            logger.error("compensateTransfer, Compensation also failed! Manual intervention needed for txn: {}", transactionId);
+            logger.error("SAGA : compensateTransfer, Compensation also failed! Manual intervention needed for txn: {}", transactionId);
             //In real production, we would send alert to operations team
         }
     }
