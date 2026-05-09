@@ -187,30 +187,48 @@ public class TransactionServiceImpl implements TransactionService {
             throw new IllegalArgumentException("Cannot transfer money to your own wallet");
         }
 
-        //DistributedLocking
-        Long fromWalletId = fromWallet.getId();
-        boolean lockAcquired = walletServiceClient.acquireLock(fromWalletId, 600); // 10 minutes timeout for testing purpose
-        if (!lockAcquired) {
-            throw new IllegalStateException("Due to DistributedLocking, another operation is in progress on this wallet. Please try again later.");
-        }
-
         //Check sufficient balance
         if (fromWallet.getBalance().compareTo(meTransferRequestDto.getAmount()) < 0) {
             throw new InsufficientBalanceException("Insufficient balance in source wallet");
         }
 
-        //Call Saga Service (Main Logic)
-        sagaService.executeTransferSaga(meTransferRequestDto, loggedInUserId);
-        logger.info("P2P meTransfer, Saga transfer logic is completed");
+        //DistributedLocking
+        Long fromWalletId = fromWallet.getId();
+        boolean lockAcquired = walletServiceClient.acquireLock(fromWalletId, 60); // 60 seconds timeout
+        if (!lockAcquired) {
+            throw new IllegalStateException("Due to DistributedLocking, another operation is in progress on this wallet. Please try again later.");
+        }
+        logger.info("P2P meTransfer, DistributedLocking lock acquired for fromWalletId : {}, amount : {}", fromWalletId, meTransferRequestDto.getAmount());
 
-        Transaction lastSavedTransaction = transactionRepository.findTopByFromWalletIdOrderByTransactionDateDesc(fromWalletId);
-        logger.info("P2P meTransfer, lastSavedTransaction is {}", lastSavedTransaction);
+        try {
+            //Call Saga Service (Main Logic)
+            sagaService.executeTransferSaga(meTransferRequestDto, loggedInUserId);
+            logger.info("P2P meTransfer, Saga transfer logic is executed");
 
-        //Always release the lock
-        walletServiceClient.releaseLock(fromWalletId);
-        logger.info("Lock released for walletId: {}", fromWalletId);
+            Transaction lastSavedTransaction = transactionRepository.findTopByFromWalletIdOrderByTransactionDateDesc(fromWalletId);
+            logger.info("P2P meTransfer, lastSavedTransaction is {}", lastSavedTransaction);
 
-        return modelMapper.map(lastSavedTransaction, TransactionResponseDto.class);
+            if (lastSavedTransaction == null) {
+                throw new ResourceNotFoundException("Transaction not found after processing");
+            }
+
+            logger.info("P2P meTransfer, Transfer completed successfully, transactionId is {}", lastSavedTransaction.getTransactionId());
+
+            return modelMapper.map(lastSavedTransaction, TransactionResponseDto.class);
+
+        } catch (Exception e){
+            logger.error("P2P meTransfer, Transfer failed for wallet: {}. Error: {}", fromWalletId, e.getMessage(), e);
+            throw e; //Let global exception handler manage the response
+        } finally {
+            // CRITICAL: Always release the lock
+            try {
+                walletServiceClient.releaseLock(fromWalletId);
+                logger.info("P2P meTransfer, DistributedLocking Lock released for wallet: {}", fromWalletId);
+            } catch (Exception lockEx) {
+                logger.warn("P2P meTransfer, DistributedLocking Failed to release lock for wallet: {}. Error: {}", fromWalletId, lockEx.getMessage());
+                // Do not throw here - we don't want to mask original exception
+            }
+        }
 
     }
 
