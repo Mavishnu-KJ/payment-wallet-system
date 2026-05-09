@@ -20,4 +20,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     Page<Transaction> findByFromWalletIdOrToWalletId(Pageable pageable, Long fromWalletId, Long toWalletId);
 
+    Transaction findTopByFromWalletIdOrderByTransactionDateDesc(Long fromWalletId);
+
 }

@@ -10,6 +10,7 @@ import com.example.transactionservice.model.entity.Transaction;
 import com.example.transactionservice.model.enums.*;
 import com.example.transactionservice.repository.TransactionRepository;
 import com.example.transactionservice.security.CurrentUser;
+import com.example.transactionservice.service.SagaService;
 import com.example.transactionservice.service.TransactionService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final WalletServiceClient walletServiceClient;
     private final UserServiceClient userServiceClient;
     private final NotificationServiceClient notificationServiceClient;
+    private final SagaService sagaService;
 
     private final Logger logger = LoggerFactory.getLogger(TransactionServiceImpl.class);
 
@@ -142,10 +144,9 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     @Transactional
     public TransactionResponseDto meTransfer(MeTransferRequestDto meTransferRequestDto){
-        logger.info("P2P meTransfer started: toWalletId {} | Amount: {}",
-                meTransferRequestDto.getToWalletId(), meTransferRequestDto.getAmount());
+        logger.info("P2P meTransfer, meTransferRequestDto is {}", meTransferRequestDto);
 
-        // Step 1: Get current logged-in user from User Service
+        //Get current logged-in user from User Service
         UserResponseDto currentUserResponseDto = userServiceClient.getCurrentUser();
         logger.info("P2P meTransfer, currentUserResponseDto is {}", currentUserResponseDto);
 
@@ -156,113 +157,61 @@ public class TransactionServiceImpl implements TransactionService {
         Long loggedInUserId = currentUserResponseDto.getUserId();
         logger.info("P2P meTransfer, transfer initiated by loggedInUserId is {}", loggedInUserId);
 
-        // Step 2: Get the user's own wallet
+        //Get the user's own wallet
         WalletResponseDto fromWallet = walletServiceClient.getWalletByUserId(loggedInUserId);
         logger.info("P2P meTransfer, fromWallet is {}", fromWallet);
 
-        // Step 3: Validate both wallets exist and is active
+        //Validate destination wallet
         WalletResponseDto toWallet = walletServiceClient.getWalletById(meTransferRequestDto.getToWalletId());
         logger.info("P2P meTransfer, toWallet is {}", toWallet);
 
+        //Validate both wallets exist and is active
         if(fromWallet == null){
             throw new ResourceNotFoundException("Your source wallet not found");
-        }
-
-        if(toWallet == null){
-            throw new ResourceNotFoundException("Destination wallet not found, walletId : "+meTransferRequestDto.getToWalletId());
         }
 
         if (fromWallet.getStatus() != WalletStatus.ACTIVE) {
             throw new IllegalStateException("Your source wallet is not active, walletId : "+fromWallet.getId());
         }
 
+        if(toWallet == null){
+            throw new ResourceNotFoundException("Destination wallet not found, walletId : "+meTransferRequestDto.getToWalletId());
+        }
+
         if (toWallet.getStatus() != WalletStatus.ACTIVE) {
             throw new IllegalStateException("Destination wallet is not active, walletId : "+meTransferRequestDto.getToWalletId());
         }
 
-        // Step 4: Prevent self-transfer
+        //Prevent self-transfer
         if (fromWallet.getId().equals(toWallet.getId())) {
             throw new IllegalArgumentException("Cannot transfer money to your own wallet");
         }
 
-        long fromWalletId = fromWallet.getId();
-        long toWalletId = toWallet.getId();
-
+        //DistributedLocking
+        Long fromWalletId = fromWallet.getId();
         boolean lockAcquired = walletServiceClient.acquireLock(fromWalletId, 600); // 10 minutes timeout for testing purpose
         if (!lockAcquired) {
             throw new IllegalStateException("Due to DistributedLocking, another operation is in progress on this wallet. Please try again later.");
         }
 
-        Transaction transaction = new Transaction();
-        try{
-            // Step 5: Check sufficient balance
-            if (fromWallet.getBalance().compareTo(meTransferRequestDto.getAmount()) < 0) {
-                throw new InsufficientBalanceException("Insufficient balance in source wallet");
-            }
-
-            // Step 6: Create Transaction record (PENDING)
-            //Transaction transaction = new Transaction();
-            transaction.setTransactionId("TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-            transaction.setFromWalletId(fromWalletId);
-            transaction.setToWalletId(toWalletId);
-            transaction.setAmount(meTransferRequestDto.getAmount());
-            transaction.setType(TransactionType.TRANSFER);
-            transaction.setStatus(TransactionStatus.PENDING);
-            transaction.setDescription(meTransferRequestDto.getDescription());
-            transaction.setTransactionDate(LocalDateTime.now());
-
-            // Step 7: Perform the actual money transfer (Atomic)
-
-            //Perform atomic transfer
-            // Debit from source wallet
-            walletServiceClient.debit(fromWalletId, meTransferRequestDto.getAmount());
-
-            // Credit to destination wallet
-            walletServiceClient.credit(toWalletId, meTransferRequestDto.getAmount());
-
-            // Mark transaction as SUCCESS
-            transaction.setStatus(TransactionStatus.SUCCESS);
-
-            logger.info("meTransfer successful: {}", transaction.getTransactionId());
-
-            // Step 8: Save transaction record
-            Transaction savedTransaction = transactionRepository.save(transaction);
-            logger.info("meTransfer successful, savedTransaction is {}", savedTransaction);
-
-            //notification-service - send notification
-            notificationServiceClient.notifyTransfer(
-                    fromWallet.getUserId(),
-                    toWallet.getUserId(),
-                    meTransferRequestDto.getAmount(),
-                    "SUCCESS"
-            );
-
-            return modelMapper.map(savedTransaction, TransactionResponseDto.class);
-
-        } catch (Exception e) {
-            transaction.setStatus(TransactionStatus.FAILED);
-            logger.error("meTransfer failed for txn: {}", transaction.getTransactionId(), e);
-
-            //notification-service - send notification
-            notificationServiceClient.notifyTransfer(
-                    fromWallet.getUserId(),
-                    toWallet.getUserId(),
-                    meTransferRequestDto.getAmount(),
-                    "FAILED"
-            );
-
-            //Still save failed transaction (optional but recommended)
-            // Only save if critical fields are set
-            if (transaction.getTransactionId() != null && transaction.getAmount() != null) {
-                transactionRepository.save(transaction);
-            }
-
-            throw e; // rollback will happen due to @Transactional
-        } finally {
-            //Always release the lock
-            walletServiceClient.releaseLock(fromWalletId);
-            logger.info("Lock released for walletId: {}", fromWalletId);
+        //Check sufficient balance
+        if (fromWallet.getBalance().compareTo(meTransferRequestDto.getAmount()) < 0) {
+            throw new InsufficientBalanceException("Insufficient balance in source wallet");
         }
+
+        //Call Saga Service (Main Logic)
+        sagaService.executeTransferSaga(meTransferRequestDto, loggedInUserId);
+        logger.info("P2P meTransfer, Saga transfer logic is completed");
+
+        Transaction lastSavedTransaction = transactionRepository.findTopByFromWalletIdOrderByTransactionDateDesc(fromWalletId);
+        logger.info("P2P meTransfer, lastSavedTransaction is {}", lastSavedTransaction);
+
+        //Always release the lock
+        walletServiceClient.releaseLock(fromWalletId);
+        logger.info("Lock released for walletId: {}", fromWalletId);
+
+        return modelMapper.map(lastSavedTransaction, TransactionResponseDto.class);
+
     }
 
     public Page<TransactionResponseDto> getMyTransactionHistory(int page, int size){
