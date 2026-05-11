@@ -6,7 +6,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.math.BigDecimal;
 
-@FeignClient(name = "notification-service", url = "${notification-service.url:http://localhost:8084}")
+//@FeignClient(name = "notification-service", url = "${notification-service.url:http://localhost:8084}")
+@FeignClient(name = "notification-service", url = "http://notification-service:8080") //Changed url because of docker
 public interface NotificationServiceClient {
 
     @PostMapping("/api/notifications/internal/add-money")

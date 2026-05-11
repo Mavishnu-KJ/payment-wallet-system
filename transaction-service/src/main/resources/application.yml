@@ -36,3 +36,8 @@ wallet-service:
 
 notification-service:
   url: http://localhost:8084
+
+#Docker : Spring will automatically pick application-docker.yml
+#spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:default}

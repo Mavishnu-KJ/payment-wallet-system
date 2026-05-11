@@ -39,3 +39,7 @@ wallet-service:
 transaction-service:
   url: http://localhost:8083
 
+#Docker : Spring will automatically pick application-docker.yml
+#spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:default}

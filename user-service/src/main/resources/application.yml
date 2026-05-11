@@ -15,7 +15,7 @@ jwt:
   secret: "PaymentWalletSystemStrongSecretKeyAtLeast64CharsLongAndRandomWithoutUnderScore"
 
 #Disable default security - important
-spring:
+#spring:
   security:
     user:
       name: ""      # Disable default user
@@ -24,3 +24,8 @@ spring:
 #User Service URL (used when running locally without Eureka)
 wallet-service:
   url: http://localhost:8081
+
+#Docker : Spring will automatically pick application-docker.yml
+#spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:default}

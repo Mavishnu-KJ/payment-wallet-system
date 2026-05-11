@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    username: sa
+    password:
+
+  data:
+    redis:
+      host: redis          # Important: Use service name as hostname
+      port: 6379
+
+server:
+  port: 8080             # Internal port inside container
