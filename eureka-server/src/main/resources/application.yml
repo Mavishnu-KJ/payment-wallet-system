@@ -1,18 +1,18 @@
 server:
-  port: 8761   # Standard Eureka port
+  port: 8761
 
-spring:
-  application:
+Spring:
+  Application:
     name: eureka-server
 
 eureka:
   instance:
     hostname: localhost
   client:
-    register-with-eureka: false    # Server should not register itself
+    register-with-eureka: false
     fetch-registry: false
   server:
-    enable-self-preservation: false   # Disable in dev (avoids warnings)
+    enable-self-preservation: false
 
 management:
   endpoints:

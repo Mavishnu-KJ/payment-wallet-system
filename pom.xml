@@ -20,7 +20,7 @@
     <properties>
         <java.version>25</java.version>
         <spring-boot.version>3.5.9</spring-boot.version>
-        <spring-cloud.version>2024.0.3</spring-cloud.version>
+        <spring-cloud.version>2025.0.2</spring-cloud.version>
     </properties>
 
     <!-- Use spring-boot-starter-parent as parent (remove dependencyManagement import) -->
