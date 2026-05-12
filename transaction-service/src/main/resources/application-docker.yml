@@ -11,6 +11,8 @@ spring:
 
 server:
   port: 8080             # Internal port inside container
+  external:
+    port: 8083
 
 #EUREKA RELATED
 #spring:
@@ -18,10 +20,17 @@ server:
     name: transaction-service
 
 eureka:
+  instance:
+    hostname: localhost
+    # Explicitly tell Eureka the external port that browser should use
+    instance-id: ${spring.application.name}:${server.external.port:8080}
+    prefer-ip-address: false
+    home-page-url: http://${eureka.instance.hostname}:${server.external.port:8080}/
+    status-page-url: http://${eureka.instance.hostname}:${server.external.port:8080}/actuator/info
+    health-check-url: http://${eureka.instance.hostname}:${server.external.port:8080}/actuator/health
+
   client:
     service-url:
-      defaultZone: http://eureka-server:8761/eureka/   # ← Use service name in Docker
+      defaultZone: http://eureka-server:8761/eureka/
     register-with-eureka: true
     fetch-registry: true
-  instance:
-    prefer-ip-address: false
