@@ -14,6 +14,7 @@
         <module>wallet-service</module>
         <module>transaction-service</module>
         <module>notification-service</module>
+        <module>eureka-server</module>
     </modules>
 
     <properties>
@@ -71,6 +72,14 @@
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-starter-openfeign</artifactId>
                 <version>4.3.0</version>
+            </dependency>
+
+            <!-- Source: https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-starter-netflix-eureka-server -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+                <version>5.0.1</version>
+                <!--<scope>compile</scope>-->
             </dependency>
 
             <!-- Redis -->
