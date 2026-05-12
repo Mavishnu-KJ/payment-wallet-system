@@ -11,3 +11,20 @@ spring:
 
 server:
   port: 8080             # Internal port inside container
+
+#EUREKA RELATED
+#spring:
+  application:
+    name: transaction-service
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/   # Points to Eureka Server
+    register-with-eureka: true
+    fetch-registry: true
+    instance-info-replication-interval-seconds: 10
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10   # Heartbeat frequency
+    lease-expiration-duration-in-seconds: 30
