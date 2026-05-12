@@ -8,7 +8,8 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 
 //@FeignClient(name = "wallet-service", url = "${wallet-service.url:http://localhost:8082}")
-@FeignClient(name = "wallet-service", url = "http://wallet-service:8080") //Changed url because of docker
+//@FeignClient(name = "wallet-service", url = "http://wallet-service:8080") //Changed url because of docker
+@FeignClient(name = "wallet-service") //Just service name enough, Eureka service discovery wil tc
 public interface WalletServiceClient {
 
     @GetMapping("/api/wallets/internal/{walletId}")
