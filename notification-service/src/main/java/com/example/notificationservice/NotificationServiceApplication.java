@@ -9,7 +9,6 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 @SpringBootApplication(exclude = {
         UserDetailsServiceAutoConfiguration.class
 })
-//@EnableFeignClients(basePackages = "com.example.notificationservice.client")
 @EnableDiscoveryClient
 public class NotificationServiceApplication {
     public static void main(String[] args) {

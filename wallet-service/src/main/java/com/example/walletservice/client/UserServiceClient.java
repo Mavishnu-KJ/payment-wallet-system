@@ -5,10 +5,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-//url = "${user-service.url:http://localhost:8081}" - default value for user-service.url
-//@FeignClient(name = "user-service", url = "${user-service.url:http://localhost:8081}")
-//@FeignClient(name = "user-service", url = "http://user-service:8080") //Changed url because of docker
-@FeignClient(name = "user-service") //Just service name enough, Eureka service discovery wil tc
+@FeignClient(name = "user-service")   // Only service name - Eureka will handle discovery
 public interface UserServiceClient {
 
     @GetMapping("/api/users/me")

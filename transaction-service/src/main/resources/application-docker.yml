@@ -17,20 +17,23 @@ server:
 #EUREKA RELATED
 #spring:
   application:
-    name: transaction-service
+    name: transaction-service          # Make sure this is NOT commented
 
 eureka:
   instance:
-    hostname: localhost
-    # Explicitly tell Eureka the external port that browser should use
-    instance-id: ${spring.application.name}:${server.external.port:8080}
+    # Use hostname (Docker service name) instead of localhost for internal calls
+    hostname: ${spring.application.name}     # ← Important change
     prefer-ip-address: false
-    home-page-url: http://${eureka.instance.hostname}:${server.external.port:8080}/
-    status-page-url: http://${eureka.instance.hostname}:${server.external.port:8080}/actuator/info
-    health-check-url: http://${eureka.instance.hostname}:${server.external.port:8080}/actuator/health
+    instance-id: ${spring.application.name}:${server.port}
+
+    # Only these two are needed for dashboard links
+    home-page-url: http://localhost:${server.external.port:8080}/
+    status-page-url: http://localhost:${server.external.port:8080}/actuator/info
+    health-check-url: http://localhost:${server.external.port:8080}/actuator/health
 
   client:
     service-url:
       defaultZone: http://eureka-server:8761/eureka/
     register-with-eureka: true
     fetch-registry: true
+    registry-fetch-interval-seconds: 5     # Faster refresh in Docker
