@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true          # Auto route to services via Eureka
+          lower-case-service-id: true
+
+      routes:
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/**, /auth/**
+          filters:
+            - RewritePath=/api/users/(?<segment>.*), /api/users/${segment}
+
+        - id: wallet-service
+          uri: lb://wallet-service
+          predicates:
+            - Path=/api/wallets/**
+
+        - id: transaction-service
+          uri: lb://transaction-service
+          predicates:
+            - Path=/api/transactions/**, /api/transfer/**
+
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/notifications/**
