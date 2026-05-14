@@ -88,3 +88,23 @@ resilience4j:
       transferRetry:
         maxAttempts: 3
         waitDuration: 800ms
+
+
+# ====================== ACTUATOR CONFIG ======================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,circuitbreakers,retries"   # Only useful and safe endpoints
+  endpoint:
+    health:
+      show-details: always           # Change to 'when-authorized' in production
+    circuitbreakers:
+      enabled: true
+    retries:
+      enabled: true
+
+#Health Check: http://localhost:8083/actuator/health
+#Circuit Breakers: http://localhost:8083/actuator/circuitbreakers
+#Retries: http://localhost:8083/actuator/retries
+#Info: http://localhost:8083/actuator/info

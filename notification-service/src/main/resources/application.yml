@@ -43,3 +43,22 @@ transaction-service:
 #spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:default}
+
+# ====================== ACTUATOR CONFIG ======================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,circuitbreakers,retries"   # Only useful and safe endpoints
+  endpoint:
+    health:
+      show-details: always           # Change to 'when-authorized' in production
+    circuitbreakers:
+      enabled: true
+    retries:
+      enabled: true
+
+#Health Check: http://localhost:8084/actuator/health
+#Circuit Breakers: http://localhost:8084/actuator/circuitbreakers
+#Retries: http://localhost:8084/actuator/retries
+#Info: http://localhost:8084/actuator/info
