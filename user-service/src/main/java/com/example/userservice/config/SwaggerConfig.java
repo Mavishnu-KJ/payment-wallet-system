@@ -5,8 +5,11 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
 
 @Configuration
 public class SwaggerConfig {
@@ -32,6 +35,13 @@ public class SwaggerConfig {
                                         .description("Enter JWT token (without 'Bearer ' prefix)")))
 
                 // Apply JWT globally
-                .addSecurityItem(new SecurityRequirement().addList("Bearer Authentication"));
+                .addSecurityItem(new SecurityRequirement().addList("Bearer Authentication"))
+
+                //For API Gateway browser swagger issues - TypeError: NetworkError when attempting to fetch resource.
+                .servers(List.of(
+                        new Server()
+                                .url("http://localhost:8080")           // ← Must point to Gateway
+                                .description("API Gateway")
+                ));
     }
 }

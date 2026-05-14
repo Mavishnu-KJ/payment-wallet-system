@@ -1,45 +1,69 @@
-routes:
-  # Root → Directly forward to Swagger UI (Fixed)
-  - id: root
-    uri: lb://user-service
-    predicates:
-      - Path=/
-    filters:
-      - RewritePath=/, /swagger-ui/index.html
+spring:
+  application:
+    name: api-gateway
 
-  # Swagger UI + OpenAPI
-  - id: swagger
-    uri: lb://user-service
-    predicates:
-      - Path=/swagger-ui/**, /v3/api-docs/**
-    filters:
-      - RewritePath=/(?<segment>.*), /${segment}
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:default}
 
-  # API Routes
-  - id: user-service
-    uri: lb://user-service
-    predicates:
-      - Path=/api/users/**, /auth/**
-    filters:
-      - RewritePath=/api/users/(?<segment>.*), /api/users/${segment}
+  cloud:
+    gateway:
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOriginPatterns: ["*"]
+            allowedMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
+            allowedHeaders: ["*"]
+            allowCredentials: false
+            exposedHeaders: ["Authorization"]
 
-  - id: wallet-service
-    uri: lb://wallet-service
-    predicates:
-      - Path=/api/wallets/**
-    filters:
-      - RewritePath=/api/wallets/(?<segment>.*), /api/wallets/${segment}
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
 
-  - id: transaction-service
-    uri: lb://transaction-service
-    predicates:
-      - Path=/api/transactions/**, /api/transfer/**
-    filters:
-      - RewritePath=/(?<segment>.*), /${segment}
+      routes:
+        - id: root
+          uri: lb://user-service
+          predicates:
+            - Path=/
+          filters:
+            - RewritePath=/, /swagger-ui/index.html
 
-  - id: notification-service
-    uri: lb://notification-service
-    predicates:
-      - Path=/api/notifications/**
-    filters:
-      - RewritePath=/(?<segment>.*), /${segment}
+        - id: swagger
+          uri: lb://user-service
+          predicates:
+            - Path=/swagger-ui/**, /v3/api-docs/**
+          filters:
+            - RewritePath=/(?<segment>.*), /${segment}
+
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/**, /auth/**
+          filters:
+            - RewritePath=/api/users/(?<segment>.*), /api/users/${segment}
+            - PreserveHostHeader
+
+        - id: wallet-service
+          uri: lb://wallet-service
+          predicates:
+            - Path=/api/wallets/**
+          filters:
+            - RewritePath=/api/wallets/(?<segment>.*), /api/wallets/${segment}
+            - PreserveHostHeader
+
+        - id: transaction-service
+          uri: lb://transaction-service
+          predicates:
+            - Path=/api/transactions/**, /api/transfer/**
+          filters:
+            - RewritePath=/(?<segment>.*), /${segment}
+            - PreserveHostHeader
+
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - RewritePath=/(?<segment>.*), /${segment}
+            - PreserveHostHeader
