@@ -95,14 +95,7 @@ management:
 resilience4j:
   ratelimiter:
     instances:
-      # Global default rate limit (for all unauthenticated calls)
       defaultRateLimit:
-        limitForPeriod: 20                  # 20 requests
-        limitRefreshPeriod: 1s              # per second
+        limitForPeriod: 20          # 20 requests
+        limitRefreshPeriod: 1s      # per second
         timeoutDuration: 0ms
-
-      # Per User Rate Limit (after authentication)
-      userRateLimit:
-        limitForPeriod: 100                 # 100 requests per user
-        limitRefreshPeriod: 60s             # per minute
-        timeoutDuration: 500ms
