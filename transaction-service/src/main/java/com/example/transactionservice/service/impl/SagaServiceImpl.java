@@ -11,6 +11,8 @@ import com.example.transactionservice.model.enums.TransactionType;
 import com.example.transactionservice.model.enums.WalletStatus;
 import com.example.transactionservice.repository.TransactionRepository;
 import com.example.transactionservice.service.SagaService;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +37,8 @@ public class SagaServiceImpl implements SagaService {
 
     @Override
     @Transactional
+    @CircuitBreaker(name = "meTransferCircuit", fallbackMethod = "meTransferFallback")
+    @Retry(name = "meTransferRetry")
     public void executeTransferSaga(MeTransferRequestDto meTransferRequestDto, Long fromUserId) {
         logger.info("SAGA : executeTransferSaga, meTransferRequestDto is {} and fromUserId is {}", meTransferRequestDto, fromUserId);
 
@@ -137,6 +141,13 @@ public class SagaServiceImpl implements SagaService {
             logger.error("SAGA : compensateTransfer, Compensation also failed! Manual intervention needed for txn: {}", transactionId);
             //In real production, we would send alert to operations team
         }
+    }
+
+    public void meTransferFallback(MeTransferRequestDto request, Throwable throwable) {
+        logger.error("meTransferFallback, meTransferSaga failed. Circuit Breaker opened or retry exhausted. Request: {}", request, throwable);
+
+        // Minimal safe actions only (no dependency on missing fields)
+        logger.warn("meTransferFallback, Transfer operation failed for user. Please try again later.");
     }
 
 }

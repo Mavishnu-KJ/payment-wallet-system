@@ -1,14 +1,16 @@
 package com.example.walletservice.client;
 
 import com.example.walletservice.model.dto.UserResponseDto;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 
-@FeignClient(name = "user-service")   // Only service name - Eureka will handle discovery
+@FeignClient(name = "user-service", fallback = UserServiceClientFallback.class)   // Only service name - Eureka will handle discovery
+//@CircuitBreaker(name = "userServiceCircuit", fallbackMethod = "getCurrentUserFallback")
 public interface UserServiceClient {
 
     @GetMapping("/api/users/me")
+    @CircuitBreaker(name = "userServiceCircuit")
     UserResponseDto getCurrentUser();
     //Returning DTO instead of ResponseEntity is the best practice in feign clients
 

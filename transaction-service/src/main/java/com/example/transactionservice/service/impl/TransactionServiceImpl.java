@@ -13,6 +13,8 @@ import com.example.transactionservice.repository.TransactionRepository;
 import com.example.transactionservice.security.CurrentUser;
 import com.example.transactionservice.service.SagaService;
 import com.example.transactionservice.service.TransactionService;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -44,6 +46,8 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     @Transactional
+    @CircuitBreaker(name = "transferCircuit", fallbackMethod = "transferFallback")
+    @Retry(name = "transferRetry")
     public TransactionResponseDto transfer(TransferRequestDto transferRequestDto) {
         logger.info("P2P Transfer started: fromWalletId {} -> toWalletId {} | Amount: {}",
                 transferRequestDto.getFromWalletId(), transferRequestDto.getToWalletId(), transferRequestDto.getAmount());
@@ -144,6 +148,8 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     @Transactional
+    @CircuitBreaker(name = "meTransferCircuit", fallbackMethod = "meTransferFallback")
+    @Retry(name = "meTransferRetry")
     public TransactionResponseDto meTransfer(MeTransferRequestDto meTransferRequestDto){
         logger.info("P2P meTransfer, meTransferRequestDto is {}", meTransferRequestDto);
 
@@ -285,6 +291,32 @@ public class TransactionServiceImpl implements TransactionService {
         return transactionResponseDtoPage;
     }
 
+    //Fallback method for meTransfer
+    public TransactionResponseDto meTransferFallback(MeTransferRequestDto meTransferRequestDto, Throwable throwable) {
+        logger.error("meTransferFallback, meTransfer failed. Circuit Breaker opened or retry exhausted. Request: {}",
+                meTransferRequestDto, throwable);
 
+        // Safe fallback response
+        TransactionResponseDto fallback = new TransactionResponseDto();
+        fallback.setDescription("Transfer service is temporarily unavailable. Please try again later.");
+        fallback.setStatus(TransactionStatus.FAILED);
+        fallback.setAmount(meTransferRequestDto.getAmount());
+
+        return fallback;
+    }
+
+    //Fallback method for transfer
+    public TransactionResponseDto transferFallback(MeTransferRequestDto meTransferRequestDto, Throwable throwable) {
+        logger.error("meTransferFallback, meTransfer failed. Circuit Breaker opened or retry exhausted. Request: {}",
+                meTransferRequestDto, throwable);
+
+        // Safe fallback response
+        TransactionResponseDto fallback = new TransactionResponseDto();
+        fallback.setDescription("Transfer service is temporarily unavailable. Please try again later.");
+        fallback.setStatus(TransactionStatus.FAILED);
+        fallback.setAmount(meTransferRequestDto.getAmount());
+
+        return fallback;
+    }
 
 }

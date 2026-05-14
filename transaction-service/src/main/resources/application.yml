@@ -41,3 +41,50 @@ notification-service:
 #spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:default}
+
+# ==================== RESILIENCE4J CONFIG ====================
+resilience4j:
+  circuitbreaker:
+    instances:
+      userServiceCircuit:
+        registerHealthIndicator: true
+        slidingWindowSize: 10                  # Last 10 calls are monitored
+        failureRateThreshold: 50               # Open circuit if 50% calls fail
+        waitDurationInOpenState: 10s           # How long to stay open
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+
+      walletServiceCircuit:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+
+      meTransferCircuit:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+
+      transferCircuit:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+
+  retry:
+    instances:
+      userServiceRetry:
+        maxAttempts: 3
+        waitDuration: 500ms
+      meTransferRetry:
+        maxAttempts: 3
+        waitDuration: 800ms
+      transferRetry:
+        maxAttempts: 3
+        waitDuration: 800ms

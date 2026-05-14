@@ -54,3 +54,32 @@ notification-service:
 #spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:default}
+
+# ==================== RESILIENCE4J CONFIG ====================
+resilience4j:
+  circuitbreaker:
+    instances:
+      userServiceCircuit:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        failureRateThreshold: 50          # Open circuit if 50% of last 10 calls fail
+        waitDurationInOpenState: 10s      # Stay open for 10 seconds
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+
+      addMoneyCircuit:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+
+  retry:
+    instances:
+      addMoneyRetry:
+        maxAttempts: 3
+        waitDuration: 500ms
+        retryExceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - feign.FeignException

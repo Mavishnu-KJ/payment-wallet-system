@@ -1,6 +1,7 @@
 package com.example.walletservice.service;
 
 import com.example.walletservice.model.dto.AddMoneyRequestDto;
+import com.example.walletservice.model.dto.UserResponseDto;
 import com.example.walletservice.model.dto.WalletResponseDto;
 
 import java.math.BigDecimal;

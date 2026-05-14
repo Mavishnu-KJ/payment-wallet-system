@@ -12,4 +12,7 @@ public class WalletResponseDto {
     private BigDecimal balance;
     private String currency;
     private WalletStatus status;
+
+    //Fallback
+    private String description;
 }

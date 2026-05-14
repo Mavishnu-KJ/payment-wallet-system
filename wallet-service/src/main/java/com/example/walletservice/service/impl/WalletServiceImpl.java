@@ -13,6 +13,8 @@ import com.example.walletservice.model.enums.WalletStatus;
 import com.example.walletservice.repository.WalletRepository;
 import com.example.walletservice.service.RedisLockService;
 import com.example.walletservice.service.WalletService;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import jakarta.transaction.Transactional;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +46,8 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
+    @CircuitBreaker(name = "addMoneyCircuit", fallbackMethod = "addMoneyFallback")
+    @Retry(name = "addMoneyRetry")
     public WalletResponseDto addMoney(AddMoneyRequestDto addMoneyRequestDto){
         logger.info("addMoney, addMoneyRequestDto is {}", addMoneyRequestDto);
 
@@ -275,6 +279,19 @@ public class WalletServiceImpl implements WalletService {
 
         redisTemplate.delete(cacheKey);
         logger.info("evictWalletCache, Wallet cache evicted for userId: {}", userId);
+    }
+
+    // Fallback method - Must have same return type and first parameter as original method
+    public WalletResponseDto addMoneyFallback(AddMoneyRequestDto addMoneyRequestDto, Throwable throwable) {
+        logger.error("addMoneyFallback, AddMoney operation failed. Circuit Breaker opened or retry exhausted. Error: {}",
+                throwable.getMessage(), throwable);
+
+        // Return safe fallback response
+        WalletResponseDto fallbackWalletResponseDto = new WalletResponseDto();
+        fallbackWalletResponseDto.setDescription("Service is temporarily unavailable. Please try again later.");
+        fallbackWalletResponseDto.setBalance(BigDecimal.ZERO);
+
+        return fallbackWalletResponseDto;
     }
 
 }
