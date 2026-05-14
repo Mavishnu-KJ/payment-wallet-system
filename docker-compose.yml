@@ -17,6 +17,17 @@ services:
       - redis_data:/data
     restart: unless-stopped
 
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"               # Main entry point
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - eureka-server
+    restart: unless-stopped
+
   user-service:
     build: ./user-service
     container_name: user-service
