@@ -37,3 +37,22 @@ eureka:
     register-with-eureka: true
     fetch-registry: true
     registry-fetch-interval-seconds: 5     # Faster refresh in Docker
+
+
+# ==================== ACTUATOR & MONITORING ====================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"               # Expose all endpoints (health, circuitbreakers, etc.)
+  endpoint:
+    health:
+      show-details: always
+    circuitbreakers:
+      enabled: true
+    retries:
+      enabled: true
+
+#http://localhost:8082/actuator/circuitbreakers
+#http://localhost:8083/actuator/circuitbreakers
+#http://localhost:8082/actuator/health

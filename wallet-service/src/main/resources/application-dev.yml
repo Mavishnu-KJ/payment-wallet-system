@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: wallet-service
+
+  datasource:
+    url: jdbc:h2:mem:walletdb
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+server:
+  port: 8082
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+logging:
+  level:
+    com.example: DEBUG

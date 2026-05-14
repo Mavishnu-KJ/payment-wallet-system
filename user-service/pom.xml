@@ -98,6 +98,12 @@
             <artifactId>resilience4j-spring-boot3</artifactId>
         </dependency>
 
+        <!--Actuator-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>
