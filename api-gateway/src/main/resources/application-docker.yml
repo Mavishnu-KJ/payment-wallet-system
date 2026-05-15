@@ -12,6 +12,11 @@ eureka:
     register-with-eureka: true
     fetch-registry: true
   instance:
-    hostname: api-gateway
+    hostname: ${spring.application.name}
     prefer-ip-address: false
     instance-id: ${spring.application.name}:${server.port}
+
+    # Only these two are needed for dashboard links
+    home-page-url: http://localhost:${server.port:8080}/
+    status-page-url: http://localhost:${server.port:8080}/actuator/info
+    health-check-url: http://localhost:${server.port:8080}/actuator/health

@@ -2,5 +2,5 @@ package com.example.userservice.model.enums;
 
 public enum UserRole {
     USER,
-    ADMIN
+    ADMIN //Will implement ROLE BASED endpoints in future
 }
