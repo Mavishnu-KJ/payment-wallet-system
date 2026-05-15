@@ -41,6 +41,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final UserServiceClient userServiceClient;
     private final NotificationServiceClient notificationServiceClient;
     private final SagaService sagaService;
+    private final CurrentUser currentUser;
 
     private final Logger logger = LoggerFactory.getLogger(TransactionServiceImpl.class);
 
@@ -153,15 +154,26 @@ public class TransactionServiceImpl implements TransactionService {
     public TransactionResponseDto meTransfer(MeTransferRequestDto meTransferRequestDto){
         logger.info("P2P meTransfer, meTransferRequestDto is {}", meTransferRequestDto);
 
-        //Get current logged-in user from User Service
-        UserResponseDto currentUserResponseDto = userServiceClient.getCurrentUser();
-        logger.info("P2P meTransfer, currentUserResponseDto is {}", currentUserResponseDto);
+        //JWT filter at Gateway level for centralized auth - start
+        Long loggedInUserId = currentUser.getCurrentUserId();
+        logger.info("P2P meTransfer, UserId from header is {}", loggedInUserId);
 
-        if(currentUserResponseDto == null || currentUserResponseDto.getUserStatus() != UserStatus.ACTIVE){
-            throw new ResourceNotFoundException("User not found or inactive");
+        if(loggedInUserId == null){
+            //Call user-service via Feign (for direct calls on port 8083)
+            logger.info("P2P meTransfer, UserId not found in header. Falling back to Feign call");
+            UserResponseDto userResponseDto = userServiceClient.getCurrentUser();
+            logger.info("P2P meTransfer, userResponseDto is {}", userResponseDto);
+
+            //Check for whether the userId exists or not in user-service
+            if(userResponseDto == null || userResponseDto.getUserStatus() != UserStatus.ACTIVE){
+                throw new ResourceNotFoundException("User not found or not active");
+            }
+
+            loggedInUserId = userResponseDto.getUserId();
+            logger.info("P2P meTransfer, loggedInUserId is {}", loggedInUserId);
         }
+        //JWT filter at Gateway level for centralized auth - end
 
-        Long loggedInUserId = currentUserResponseDto.getUserId();
         logger.info("P2P meTransfer, transfer initiated by loggedInUserId is {}", loggedInUserId);
 
         //Get the user's own wallet
@@ -242,16 +254,25 @@ public class TransactionServiceImpl implements TransactionService {
     public Page<TransactionResponseDto> getMyTransactionHistory(int page, int size){
         logger.info("getMyTransactionHistory, page is {}, size is {}", page, size);
 
-        //Get current logged-in user from User Service
-        UserResponseDto currentUserResponseDto = userServiceClient.getCurrentUser();
-        logger.info("getMyTransactionHistory, currentUserResponseDto is {}", currentUserResponseDto);
+        //JWT filter at Gateway level for centralized auth - start
+        Long loggedInUserId = currentUser.getCurrentUserId();
+        logger.info("getMyTransactionHistory, UserId from header is {}", loggedInUserId);
 
-        if(currentUserResponseDto == null || currentUserResponseDto.getUserStatus() != UserStatus.ACTIVE){
-            throw new ResourceNotFoundException("User not found or inactive");
+        if(loggedInUserId == null){
+            //Call user-service via Feign (for direct calls on port 8083)
+            logger.info("getMyTransactionHistory, UserId not found in header. Falling back to Feign call");
+            UserResponseDto userResponseDto = userServiceClient.getCurrentUser();
+            logger.info("getMyTransactionHistory, userResponseDto is {}", userResponseDto);
+
+            //Check for whether the userId exists or not in user-service
+            if(userResponseDto == null || userResponseDto.getUserStatus() != UserStatus.ACTIVE){
+                throw new ResourceNotFoundException("User not found or not active");
+            }
+
+            loggedInUserId = userResponseDto.getUserId();
+            logger.info("getMyTransactionHistory, loggedInUserId is {}", loggedInUserId);
         }
-
-        Long loggedInUserId = currentUserResponseDto.getUserId();
-        logger.info("getMyTransactionHistory, loggedInUserId is {}", loggedInUserId);
+        //JWT filter at Gateway level for centralized auth - end
 
         //Get user's wallet
         WalletResponseDto wallet = walletServiceClient.getWalletByUserId(loggedInUserId);
