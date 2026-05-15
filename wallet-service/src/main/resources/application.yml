@@ -95,7 +95,7 @@ management:
     health:
       show-details: always           # Change to 'when-authorized' in production
     info:
-      enabled: true
+      access: unrestricted
     circuitbreakers:
       enabled: true
     retries:
