@@ -107,16 +107,25 @@ public class WalletServiceImpl implements WalletService {
     public WalletResponseDto getMyWallet(){
         logger.info("getMyWallet");
 
-        //Fetch current user from User Service via Feign
-        UserResponseDto userResponseDto = userServiceClient.getCurrentUser();
+        //JWT filter at Gateway level for centralized auth - start
+        Long userId = currentUser.getCurrentUserId();
+        logger.info("getMyWallet, UserId from header is {}", userId);
 
-        //Check for whether the userId exists or not in user-service
-        if(userResponseDto == null || userResponseDto.getUserStatus() != UserStatus.ACTIVE){
-            throw new ResourceNotFoundException("User not found or not active");
+        if(userId == null){
+            //Call user-service via Feign (for direct calls on port 8082)
+            logger.info("getMyWallet, UserId not found in header. Falling back to Feign call");
+            UserResponseDto userResponseDto = userServiceClient.getCurrentUser();
+            logger.info("getMyWallet, userResponseDto is {}", userResponseDto);
+
+            //Check for whether the userId exists or not in user-service
+            if(userResponseDto == null || userResponseDto.getUserStatus() != UserStatus.ACTIVE){
+                throw new ResourceNotFoundException("User not found or not active");
+            }
+
+            userId = userResponseDto.getUserId();
+            logger.info("getMyWallet, userId is {}", userId);
         }
-
-        long userId = userResponseDto.getUserId();
-        logger.info("getMyWallet, userId is {}", userId);
+        //JWT filter at Gateway level for centralized auth - end
 
         //Find wallet for the userId
         WalletResponseDto walletResponseDto = getWalletWithCache(userId);
@@ -129,16 +138,25 @@ public class WalletServiceImpl implements WalletService {
     public BigDecimal getMyWalletBalance(){
         logger.info("getMyWalletBalance");
 
-        //Fetch current user from User Service via Feign
-        UserResponseDto userResponseDto = userServiceClient.getCurrentUser();
+        //JWT filter at Gateway level for centralized auth - start
+        Long userId = currentUser.getCurrentUserId();
+        logger.info("getMyWalletBalance, UserId from header is {}", userId);
 
-        //Check for whether the userId exists or not in user-service
-        if(userResponseDto == null || userResponseDto.getUserStatus() != UserStatus.ACTIVE){
-            throw new ResourceNotFoundException("User not found or not active");
+        if(userId == null){
+            //Call user-service via Feign (for direct calls on port 8082)
+            logger.info("getMyWalletBalance, UserId not found in header. Falling back to Feign call");
+            UserResponseDto userResponseDto = userServiceClient.getCurrentUser();
+            logger.info("getMyWalletBalance, userResponseDto is {}", userResponseDto);
+
+            //Check for whether the userId exists or not in user-service
+            if(userResponseDto == null || userResponseDto.getUserStatus() != UserStatus.ACTIVE){
+                throw new ResourceNotFoundException("User not found or not active");
+            }
+
+            userId = userResponseDto.getUserId();
+            logger.info("getMyWalletBalance, userId is {}", userId);
         }
-
-        long userId = userResponseDto.getUserId();
-        logger.info("getMyWalletBalance, userId is {}", userId);
+        //JWT filter at Gateway level for centralized auth - end
 
         //Find wallet for the userId
         WalletResponseDto walletResponseDto = getWalletWithCache(userId);
