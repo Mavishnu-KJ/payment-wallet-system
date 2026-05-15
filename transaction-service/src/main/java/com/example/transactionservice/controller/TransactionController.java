@@ -25,16 +25,6 @@ public class TransactionController {
 
     private final Logger logger = LoggerFactory.getLogger(TransactionController.class);
 
-    @PostMapping("/transfer")
-    ResponseEntity<TransactionResponseDto> transfer(@Valid @RequestBody TransferRequestDto transferRequestDto){
-        logger.info("transfer, transferRequestDto is {}", transferRequestDto);
-
-        TransactionResponseDto transactionResponseDto = transactionService.transfer(transferRequestDto);
-        logger.info("transfer, transactionResponseDto is {}", transactionResponseDto);
-
-        return ResponseEntity.ok(transactionResponseDto);
-    }
-
     @GetMapping("/history/{walletId}")
     ResponseEntity<List<TransactionResponseDto>> getTransactionHistory(@PathVariable @Valid Long walletId){
         logger.info("getTransactionHistory, walletId is {}", walletId);

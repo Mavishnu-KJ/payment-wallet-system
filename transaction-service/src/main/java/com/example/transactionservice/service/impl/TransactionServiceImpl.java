@@ -46,91 +46,6 @@ public class TransactionServiceImpl implements TransactionService {
     private final Logger logger = LoggerFactory.getLogger(TransactionServiceImpl.class);
 
     @Override
-    @Transactional
-    @CircuitBreaker(name = "transferCircuit", fallbackMethod = "transferFallback")
-    @Retry(name = "transferRetry")
-    public TransactionResponseDto transfer(TransferRequestDto transferRequestDto) {
-        logger.info("P2P Transfer started: fromWalletId {} -> toWalletId {} | Amount: {}",
-                transferRequestDto.getFromWalletId(), transferRequestDto.getToWalletId(), transferRequestDto.getAmount());
-
-        // Step 1: Get current logged-in user from User Service
-        UserResponseDto currentUserResponseDto = userServiceClient.getCurrentUser();
-        logger.info("P2P Transfer, currentUserResponseDto is {}", currentUserResponseDto);
-
-        if(currentUserResponseDto == null || currentUserResponseDto.getUserStatus() != UserStatus.ACTIVE){
-            throw new ResourceNotFoundException("User not found or inactive");
-        }
-
-        Long loggedInUserId = currentUserResponseDto.getUserId();
-        logger.info("P2P Transfer, transfer initiated by loggedInUserId is {}", loggedInUserId);
-
-        // Step 2: Validate both wallets exist and are active
-        WalletResponseDto fromWallet = walletServiceClient.getWalletById(transferRequestDto.getFromWalletId());
-        WalletResponseDto toWallet = walletServiceClient.getWalletById(transferRequestDto.getToWalletId());
-
-        logger.info("P2P Transfer, fromWallet is {}", fromWallet);
-        logger.info("P2P Transfer, toWallet is {}", toWallet);
-
-        if(fromWallet == null){
-            throw new ResourceNotFoundException("Wallet not found for the walletId : "+transferRequestDto.getFromWalletId());
-        }
-
-        if(toWallet == null){
-            throw new ResourceNotFoundException("Wallet not found for the walletId : "+transferRequestDto.getToWalletId());
-        }
-
-        if (fromWallet.getStatus() != WalletStatus.ACTIVE || toWallet.getStatus() != WalletStatus.ACTIVE) {
-            throw new IllegalStateException("One or both wallets are not active");
-        }
-
-        // Step 3: Ownership Validation (Security Check)
-        if (!fromWallet.getUserId().equals(loggedInUserId)) {
-            throw new IllegalArgumentException("You can only transfer money from your own wallet");
-        }
-
-        // Step 4: Check sufficient balance
-        if (fromWallet.getBalance().compareTo(transferRequestDto.getAmount()) < 0) {
-            throw new InsufficientBalanceException("Insufficient balance in source wallet");
-        }
-
-        // Step 3: Create Transaction record (PENDING)
-        Transaction transaction = new Transaction();
-        transaction.setTransactionId("TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        transaction.setFromWalletId(transferRequestDto.getFromWalletId());
-        transaction.setToWalletId(transferRequestDto.getToWalletId());
-        transaction.setAmount(transferRequestDto.getAmount());
-        transaction.setType(TransactionType.TRANSFER);
-        transaction.setStatus(TransactionStatus.PENDING);
-        transaction.setDescription(transferRequestDto.getDescription());
-        transaction.setTransactionDate(LocalDateTime.now());
-
-        // Step 4: Perform the actual money transfer (Atomic)
-        try {
-            // Debit from source wallet
-            walletServiceClient.debit(transferRequestDto.getFromWalletId(), transferRequestDto.getAmount());
-
-            // Credit to destination wallet
-            walletServiceClient.credit(transferRequestDto.getToWalletId(), transferRequestDto.getAmount());
-
-            // Mark transaction as SUCCESS
-            transaction.setStatus(TransactionStatus.SUCCESS);
-
-            logger.info("Transfer successful: {}", transaction.getTransactionId());
-
-        } catch (Exception e) {
-            transaction.setStatus(TransactionStatus.FAILED);
-            logger.error("Transfer failed for txn: {}", transaction.getTransactionId(), e);
-            throw e; // rollback will happen due to @Transactional
-        }
-
-        // Step 5: Save transaction record
-        Transaction savedTransaction = transactionRepository.save(transaction);
-        logger.info("Transfer successful, savedTransaction is {}", savedTransaction);
-
-        return modelMapper.map(savedTransaction, TransactionResponseDto.class);
-    }
-
-    @Override
     public List<TransactionResponseDto> getTransactionHistory(Long walletId) {
         logger.info("getTransactionHistory");
 
@@ -314,20 +229,6 @@ public class TransactionServiceImpl implements TransactionService {
 
     //Fallback method for meTransfer
     public TransactionResponseDto meTransferFallback(MeTransferRequestDto meTransferRequestDto, Throwable throwable) {
-        logger.error("meTransferFallback, meTransfer failed. Circuit Breaker opened or retry exhausted. Request: {}",
-                meTransferRequestDto, throwable);
-
-        // Safe fallback response
-        TransactionResponseDto fallback = new TransactionResponseDto();
-        fallback.setDescription("Transfer service is temporarily unavailable. Please try again later.");
-        fallback.setStatus(TransactionStatus.FAILED);
-        fallback.setAmount(meTransferRequestDto.getAmount());
-
-        return fallback;
-    }
-
-    //Fallback method for transfer
-    public TransactionResponseDto transferFallback(MeTransferRequestDto meTransferRequestDto, Throwable throwable) {
         logger.error("meTransferFallback, meTransfer failed. Circuit Breaker opened or retry exhausted. Request: {}",
                 meTransferRequestDto, throwable);
 

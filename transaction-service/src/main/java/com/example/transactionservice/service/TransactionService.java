@@ -9,8 +9,6 @@ import java.util.List;
 
 public interface TransactionService {
 
-    TransactionResponseDto transfer(TransferRequestDto transferRequestDto);
-
     List<TransactionResponseDto> getTransactionHistory(Long walletId);
 
     TransactionResponseDto meTransfer(MeTransferRequestDto meTransferRequestDto);

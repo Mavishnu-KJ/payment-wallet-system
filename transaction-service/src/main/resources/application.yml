@@ -69,23 +69,12 @@ resilience4j:
         permittedNumberOfCallsInHalfOpenState: 3
         automaticTransitionFromOpenToHalfOpenEnabled: true
 
-      transferCircuit:
-        registerHealthIndicator: true
-        slidingWindowSize: 10
-        failureRateThreshold: 50
-        waitDurationInOpenState: 10s
-        permittedNumberOfCallsInHalfOpenState: 3
-        automaticTransitionFromOpenToHalfOpenEnabled: true
-
   retry:
     instances:
       userServiceRetry:
         maxAttempts: 3
         waitDuration: 500ms
       meTransferRetry:
-        maxAttempts: 3
-        waitDuration: 800ms
-      transferRetry:
         maxAttempts: 3
         waitDuration: 800ms
 
