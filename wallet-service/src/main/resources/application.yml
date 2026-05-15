@@ -94,6 +94,8 @@ management:
   endpoint:
     health:
       show-details: always           # Change to 'when-authorized' in production
+    info:
+      enabled: true
     circuitbreakers:
       enabled: true
     retries:
@@ -103,3 +105,11 @@ management:
 #Circuit Breakers: http://localhost:8082/actuator/circuitbreakers
 #Retries: http://localhost:8082/actuator/retries
 #Info: http://localhost:8082/actuator/info
+
+info:
+  app:
+    name: ${spring.application.name}
+    spring-boot-version: ${spring-boot.version}
+    java-version: ${java.version}
+    description: Payment Wallet System - Microservices Architecture
+    author: Mavishnu KJ
