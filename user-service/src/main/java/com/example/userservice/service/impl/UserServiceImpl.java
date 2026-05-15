@@ -65,39 +65,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponseDto getUserById(Long id){
-        logger.info("getUserById, id is {}", id);
-
-        User user = userRepository.findById(id)
-                        .orElseThrow(()->new ResourceNotFoundException("Resource not found for "+id));
-
-        logger.info("getUserById, user is {}", user);
-
-        //Map entity to response dto
-        UserResponseDto userResponseDto = modelMapper.map(user, UserResponseDto.class);
-        logger.info("getUserById, userResponseDto is {}", userResponseDto);
-
-        return userResponseDto;
-    }
-
-    @Override
-    public List<UserResponseDto> getAllUsers(){
-        logger.info("getAllUsers");
-
-        List<User> userList = userRepository.findAll();
-        logger.info("getAllUsers, userList is {}", userList);
-
-        //Map entity to response to
-        List<UserResponseDto> userResponseDtoList = userList.stream()
-                .filter(Objects::nonNull)
-                .map(user -> modelMapper.map(user, UserResponseDto.class))
-                .toList();
-        logger.info("getAllUsers, userResponseDtoList is {}", userResponseDtoList);
-
-        return userResponseDtoList;
-    }
-
-    @Override
     @Transactional
     public String generateToken(LoginRequestDto loginRequestDto){
         logger.info("generateToken, loginRequestDto is {}", loginRequestDto);

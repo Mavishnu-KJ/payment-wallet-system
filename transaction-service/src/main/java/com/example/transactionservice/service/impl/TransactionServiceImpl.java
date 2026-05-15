@@ -46,23 +46,6 @@ public class TransactionServiceImpl implements TransactionService {
     private final Logger logger = LoggerFactory.getLogger(TransactionServiceImpl.class);
 
     @Override
-    public List<TransactionResponseDto> getTransactionHistory(Long walletId) {
-        logger.info("getTransactionHistory");
-
-        List<Transaction> transactions = transactionRepository
-                .findByFromWalletIdOrToWalletIdOrderByTransactionDateDesc(walletId, walletId);
-        logger.info("getTransactionHistory, transactions are {}", transactions);
-
-        List<TransactionResponseDto> transactionResponseDtoList = transactions.stream()
-                .map(txn -> modelMapper.map(txn, TransactionResponseDto.class))
-                .collect(Collectors.toList());
-
-        logger.info("getTransactionHistory, transactionResponseDtoList is {}", transactionResponseDtoList);
-
-        return transactionResponseDtoList;
-    }
-
-    @Override
     @Transactional
     @CircuitBreaker(name = "meTransferCircuit", fallbackMethod = "meTransferFallback")
     @Retry(name = "meTransferRetry")

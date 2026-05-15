@@ -10,8 +10,6 @@ public interface UserService {
 
     UserResponseDto register(RegisterRequestDto registerRequestDto);
     String generateToken(LoginRequestDto loginRequestDto);
-    UserResponseDto getUserById(Long id);
-    List<UserResponseDto> getAllUsers();
 
     UserResponseDto getCurrentUser();
 

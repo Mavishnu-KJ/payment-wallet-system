@@ -42,26 +42,6 @@ public class UserController {
         return ResponseEntity.created(location).body(userResponseDto);
     }
 
-    @GetMapping("/{userId}")
-    ResponseEntity<UserResponseDto> getUserById(@PathVariable(name = "userId") Long id){
-        logger.info("getUserById, id is {}", id);
-
-        UserResponseDto userResponseDto = userService.getUserById(id);
-        logger.info("getUserById, userResponseDto is {}", userResponseDto);
-
-        return ResponseEntity.ok(userResponseDto);
-    }
-
-    @GetMapping
-    ResponseEntity<List<UserResponseDto>> getAllUsers(){
-        logger.info("getAllUsers");
-
-        List<UserResponseDto> userResponseDtoList = userService.getAllUsers();
-        logger.info("getAllUsers, userResponseDtoList is {}", userResponseDtoList);
-
-        return ResponseEntity.ok(userResponseDtoList);
-    }
-
     @PostMapping("/login")
     ResponseEntity<String> login(@Valid @RequestBody LoginRequestDto loginRequestDto){
         logger.info("login, loginRequestDto is {}", loginRequestDto);

@@ -21,4 +21,6 @@ public class RegisterRequestDto {
 
     @NotBlank
     private String fullName;
+
+    private String userRole;
 }
