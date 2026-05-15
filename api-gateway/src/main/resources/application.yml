@@ -22,12 +22,13 @@ spring:
           lower-case-service-id: true
 
       routes:
-        - id: root
+        # ==================== PUBLIC ROUTES (No JWT required) ====================
+        - id: auth-public
           uri: lb://user-service
           predicates:
-            - Path=/
+            - Path=/api/users/register, /api/users/login, /auth/**
           filters:
-            - RewritePath=/, /swagger-ui/index.html
+            - RewritePath=/api/users/(?<segment>.*), /api/users/${segment}
 
         - id: swagger
           uri: lb://user-service
@@ -36,14 +37,16 @@ spring:
           filters:
             - RewritePath=/(?<segment>.*), /${segment}
 
+        # ==================== PROTECTED ROUTES (JWT Required) ====================
         - id: user-service
           uri: lb://user-service
           predicates:
-            - Path=/api/users/**, /auth/**
+            - Path=/api/users/**
           filters:
             - RewritePath=/api/users/(?<segment>.*), /api/users/${segment}
             - PreserveHostHeader
             - RateLimitingFilter #If limit exceeded → returns HTTP 429 Too Many Requests
+            - JwtAuthenticationFilter
 
         - id: wallet-service
           uri: lb://wallet-service
@@ -53,6 +56,7 @@ spring:
             - RewritePath=/api/wallets/(?<segment>.*), /api/wallets/${segment}
             - PreserveHostHeader
             - RateLimitingFilter #If limit exceeded → returns HTTP 429 Too Many Requests
+            - JwtAuthenticationFilter
 
         - id: transaction-service
           uri: lb://transaction-service
@@ -62,6 +66,7 @@ spring:
             - RewritePath=/(?<segment>.*), /${segment}
             - PreserveHostHeader
             - RateLimitingFilter #If limit exceeded → returns HTTP 429 Too Many Requests
+            - JwtAuthenticationFilter
 
         - id: notification-service
           uri: lb://notification-service
@@ -71,6 +76,7 @@ spring:
             - RewritePath=/(?<segment>.*), /${segment}
             - PreserveHostHeader
             - RateLimitingFilter #If limit exceeded → returns HTTP 429 Too Many Requests
+            - JwtAuthenticationFilter
 
 # ====================== ACTUATOR CONFIG ======================
 management:
@@ -99,3 +105,7 @@ resilience4j:
         limitForPeriod: 20          # 20 requests
         limitRefreshPeriod: 1s      # per second
         timeoutDuration: 0ms
+
+# secret key for jwt token
+jwt:
+  secret: "PaymentWalletSystemStrongSecretKeyAtLeast64CharsLongAndRandomWithoutUnderScore"

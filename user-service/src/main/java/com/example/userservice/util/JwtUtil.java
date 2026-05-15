@@ -24,6 +24,7 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
+    // ==================== OLD METHOD (Keep as it is) ====================
     public String generateToken(String username) {
         Map<String, Object> claims = new HashMap<>();
         return Jwts.builder()
@@ -35,15 +36,33 @@ public class JwtUtil {
                 .compact();
     }
 
+    // ==================== NEW METHOD (This is what we will use) ====================
+    public String generateToken(String username, Long userId) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId);               // ← Important
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(username)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    // Rest of your methods remain unchanged
     public String extractUsername(String token) {
         return extractAllClaims(token).getSubject();
+    }
+
+    public Long extractUserId(String token) {
+        return extractAllClaims(token).get("userId", Long.class);
     }
 
     public boolean isTokenExpired(String token) {
         return extractAllClaims(token).getExpiration().before(new Date());
     }
 
-    // Validate token with username (optional, if needed)
     public boolean validateToken(String token, String username) {
         final String extractedUsername = extractUsername(token);
         return (extractedUsername.equals(username) && !isTokenExpired(token));
@@ -54,7 +73,6 @@ public class JwtUtil {
             extractAllClaims(token);
             return true;
         } catch (Exception e) {
-            e.printStackTrace();   // temporary for debugging
             return false;
         }
     }

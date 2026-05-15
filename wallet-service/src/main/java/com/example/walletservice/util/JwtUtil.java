@@ -33,6 +33,21 @@ public class JwtUtil {
         return claims.getSubject();
     }
 
+    // NEW: Extract userId (most important for you now)
+    public Long getUserIdFromToken(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            return claims.get("userId", Long.class);
+        } catch (Exception e) {
+            logger.error("Failed to extract userId from token", e);
+            return null;
+        }
+    }
+
     public boolean validateToken(String token) {
         try {
             Jwts.parser()

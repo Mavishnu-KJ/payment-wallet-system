@@ -11,6 +11,7 @@ import com.example.walletservice.model.entity.Wallet;
 import com.example.walletservice.model.enums.UserStatus;
 import com.example.walletservice.model.enums.WalletStatus;
 import com.example.walletservice.repository.WalletRepository;
+import com.example.walletservice.security.CurrentUser;
 import com.example.walletservice.service.RedisLockService;
 import com.example.walletservice.service.WalletService;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -38,6 +39,7 @@ public class WalletServiceImpl implements WalletService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final RedisLockService redisLockService;
     private final NotificationServiceClient notificationServiceClient;
+    private final CurrentUser currentUser;
 
     private static final Logger logger = LoggerFactory.getLogger(WalletServiceImpl.class);
     private static final String WALLET_CACHE_KEY = "wallet:";
@@ -51,16 +53,25 @@ public class WalletServiceImpl implements WalletService {
     public WalletResponseDto addMoney(AddMoneyRequestDto addMoneyRequestDto){
         logger.info("addMoney, addMoneyRequestDto is {}", addMoneyRequestDto);
 
-        //Fetch current user from User Service via Feign
-        UserResponseDto userResponseDto = userServiceClient.getCurrentUser();
+        //JWT filter at Gateway level for centralized auth - start
+        Long userId = currentUser.getCurrentUserId();
+        logger.info("addMoney, UserId from header is {}", userId);
 
-        //Check for whether the userId exists or not in user-service
-        if(userResponseDto == null || userResponseDto.getUserStatus() != UserStatus.ACTIVE){
-            throw new ResourceNotFoundException("User not found or not active");
+        if(userId == null){
+            //Call user-service via Feign (for direct calls on port 8082)
+            logger.info("addMoney, UserId not found in header. Falling back to Feign call");
+            UserResponseDto userResponseDto = userServiceClient.getCurrentUser();
+            logger.info("addMoney, userResponseDto is {}", userResponseDto);
+
+            //Check for whether the userId exists or not in user-service
+            if(userResponseDto == null || userResponseDto.getUserStatus() != UserStatus.ACTIVE){
+                throw new ResourceNotFoundException("User not found or not active");
+            }
+
+            userId = userResponseDto.getUserId();
+            logger.info("addMoney, userId is {}", userId);
         }
-
-        long userId = userResponseDto.getUserId();
-        logger.info("addMoney, userId is {}", userId);
+        //JWT filter at Gateway level for centralized auth - end
 
         //Get or create wallet for the userId
         Wallet wallet = walletRepository.findByUserId(userId)
