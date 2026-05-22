@@ -121,4 +121,4 @@ docker compose up --build
 
 ## Author
 
-- [mavishnu KJ](www.linkedin.com/in/mavishnu-kj)
+- [Mavishnu KJ](www.linkedin.com/in/mavishnu-kj)
