@@ -37,50 +37,8 @@ This project is a **fully functional Payment Wallet System** with multiple micro
 | Build Tool         | Maven (Multi-module) |
 
 ## 🏗 Architecture
-+-----------------+
-|   API Gateway   |  ← JWT Auth + Rate Limiting
-+-----------------+
-|
-+------------------+------------------+
-|                  |                  |
-User Service     Wallet Service     Transaction Service
-|                  |                  |
-Notification Service     Redis (Cache + Distributed Lock)
 
-flowchart TD
-subgraph Client
-A[Frontend / Postman / Mobile App]
-end
-
-    subgraph "API Gateway"
-        B[Spring Cloud Gateway\n- JWT Authentication\n- Rate Limiting\n- Routing]
-    end
-
-    subgraph "Microservices"
-        C[User Service\n- Auth\n- Registration\n- Login] 
-        D[Wallet Service\n- Balance\n- Add Money]
-        E[Transaction Service\n- P2P Transfer\n- Saga Pattern]
-        F[Notification Service\n- Email/SMS Simulation]
-    end
-
-    subgraph "Infrastructure"
-        G[Eureka Server\nService Discovery]
-        H[Redis\n- Caching\n- Distributed Locking]
-    end
-
-    A --> B
-    B --> C
-    B --> D
-    B --> E
-    B --> F
-    
-    C <--> G
-    D <--> G
-    E <--> G
-    F <--> G
-    
-    D <--> H
-    E <--> H
+![Highlevel_Architecture.jpg](Info/Highlevel_Architecture.jpg)
 
 **Design Patterns Used**:
 - Choreography-based Saga Pattern
