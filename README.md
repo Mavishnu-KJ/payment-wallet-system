@@ -41,10 +41,10 @@ This project is a **fully functional Payment Wallet System** with multiple micro
 ![Highlevel_Architecture.jpg](Info/Highlevel_Architecture.jpg)
 
 **Design Patterns Used**:
-- Choreography-based Saga Pattern
+- Saga Pattern (Synchronous implementation with compensation)
 - Circuit Breaker & Retry
 - Centralized Authentication
-- Eventual Consistency
+- Distributed Locking
 
 ## 🚀 How to Run
 
@@ -95,8 +95,8 @@ docker compose up --build
 
 ## 🧠 Key Learnings & Highlights
 
-- => Implemented Choreography Saga Pattern for distributed transactions
-- => Used Redis Distributed Locking to handle concurrency
+- => Implemented Saga Pattern for reliable P2P money transfers using synchronous Feign calls with compensation logic
+- => Used Redis Distributed Locking to handle high concurrency during money transfers
 - => Centralized JWT Authentication at API Gateway
 - => Applied Resilience4j (Circuit Breaker, Retry, Rate Limiter)
 - => Proper Docker multi-stage builds and profiles (dev & docker)
@@ -105,7 +105,6 @@ docker compose up --build
 ## 📈 Future Enhancements
 
 - => Integration with real payment gateway (Razorpay/Stripe)
-- => Kafka for event-driven architecture
 - => Distributed Tracing with Zipkin
 - => Spring Cloud Config Server
 - => Database migration to PostgreSQL
