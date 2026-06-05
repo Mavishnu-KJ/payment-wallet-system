@@ -74,20 +74,29 @@ public class SagaServiceImpl implements SagaService {
         transaction.setDescription(meTransferRequestDto.getDescription());
         transaction.setTransactionDate(LocalDateTime.now());
 
+        boolean debitSuccess = false;
+        boolean creditSuccess = false;
+        boolean transactionSave = false;
+
         try {
             logger.info("SAGA : executeTransferSaga, Saga started, transaction is {}", transaction);
 
             //Step 1: Debit
             walletServiceClient.debit(fromWalletId, amount);
+            debitSuccess = true;
+            logger.info("SAGA: executeTransferSaga, Debit successful for transaction {}", transactionId);
 
             //Step 2: Credit
             walletServiceClient.credit(toWalletId, amount);
+            creditSuccess = true;
+            logger.info("SAGA: executeTransferSaga, Credit successful for transaction {}", transactionId);
 
             //Step 3: Mark Success
             transaction.setStatus(TransactionStatus.SUCCESS);
 
             //Step 4 : Save transaction record
             transactionRepository.save(transaction);
+            transactionSave = true;
             logger.info("SAGA : executeTransferSaga, Saga transaction saved successfully, transaction is {}", transaction);
 
             //Send notification : SUCCESS
@@ -105,7 +114,7 @@ public class SagaServiceImpl implements SagaService {
             logger.error("SAGA : executeTransferSaga, Saga failed for transaction: {}. Starting compensation...", transactionId, e);
 
             //Saga Compensation
-            compensateTransfer(fromWalletId, toWalletId, amount, transactionId);
+            compensateTransfer(fromWalletId, toWalletId, amount, transactionId, debitSuccess, creditSuccess, transactionSave);
 
             transaction.setStatus(TransactionStatus.FAILED);
 
@@ -128,15 +137,29 @@ public class SagaServiceImpl implements SagaService {
     }
 
     @Override
-    public void compensateTransfer(Long fromWalletId, Long toWalletId, BigDecimal amount, String transactionId) {
+    public void compensateTransfer(Long fromWalletId, Long toWalletId, BigDecimal amount, String transactionId, boolean debitSuccess, boolean creditSuccess, boolean transactionSave) {
 
-        logger.info("SAGA : compensateTransfer, fromWalletId is {} and toWalletId is {}, amount is {}, transactionId is {}",
-                fromWalletId, toWalletId, amount, transactionId);
+        logger.info("SAGA : compensateTransfer, fromWalletId is {} and toWalletId is {}, amount is {}, transactionId is {}, debitSuccess is {}, creditSuccess is {}, transactionSave is {}",
+                fromWalletId, toWalletId, amount, transactionId, debitSuccess, creditSuccess, transactionSave);
 
         try {
-            logger.info("SAGA : compensateTransfer, Compensating: Refunding amount to source wallet");
-            walletServiceClient.credit(fromWalletId, amount);   // refund
-            logger.info("SAGA : compensateTransfer, Compensation completed for transaction: {}", transactionId);
+            // Case 1: Debit succeeded but Credit failed → Refund sender
+            if (debitSuccess && !creditSuccess) {
+                // Only refund if debit happened but credit failed
+                logger.info("SAGA: compensateTransfer, Compensating - Refunding sender for txn {}", transactionId);
+                walletServiceClient.credit(fromWalletId, amount);   // Refund
+                logger.info("SAGA: compensateTransfer, Compensation (refund) completed for txn {}", transactionId);
+            }
+            // Case 2: Both Debit and Credit succeeded but Transaction Save failed
+            else if (debitSuccess && creditSuccess && !transactionSave) {
+                logger.warn("SAGA : compensateTransfer, Debit & Credit succeeded but transaction save failed for txn {}. No refund needed.", transactionId);
+                // Optional: We can retry saving the transaction here
+                // transactionRepository.save(...) with retry logic
+            }
+            // Case 3: No money was moved (failure happened before debit or after full success)
+            else {
+                logger.info("SAGA : compensateTransfer, No compensation required for txn {}", transactionId);
+            }
         } catch (Exception ex) {
             logger.error("SAGA : compensateTransfer, Compensation also failed! Manual intervention needed for txn: {}", transactionId);
             //In real production, we would send alert to operations team

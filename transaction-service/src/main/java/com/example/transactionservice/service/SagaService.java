@@ -8,5 +8,5 @@ public interface SagaService {
 
     void executeTransferSaga(MeTransferRequestDto meTransferRequestDto, Long fromUserId);
 
-    void compensateTransfer(Long fromWalletId, Long toWalletId, BigDecimal amount, String transactionId);
+    void compensateTransfer(Long fromWalletId, Long toWalletId, BigDecimal amount, String transactionId, boolean debitSuccess, boolean creditSuccess, boolean transactionSave);
 }
